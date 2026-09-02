@@ -1,6 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
-import { Link, Route, Switch, useLocation } from 'wouter';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ClerkProvider,
+  Show,
+  SignIn,
+  SignUp,
+  useAuth,
+  useClerk,
+  useUser,
+} from '@clerk/react';
+import { publishableKeyFromHost } from '@clerk/react/internal';
+import { shadcn } from '@clerk/themes';
+import { Link, Redirect, Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import {
   Activity, ArrowDownRight, ArrowRight, Bell, BookOpen, Check, ChevronDown, ChevronLeft,
   ChevronRight, CircleHelp, Cloud, Database, Download, ExternalLink, Eye, FileText,
@@ -14,6 +25,161 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient();
+
+const clerkPubKey = publishableKeyFromHost(
+  window.location.hostname,
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+function stripBase(path: string): string {
+  return basePath && path.startsWith(basePath)
+    ? path.slice(basePath.length) || '/'
+    : path;
+}
+
+if (!clerkPubKey) {
+  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
+}
+
+const clerkAppearance = {
+  theme: shadcn,
+  cssLayerName: 'clerk',
+  options: {
+    logoPlacement: 'inside' as const,
+    logoLinkUrl: basePath || '/',
+    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+  },
+  variables: {
+    colorPrimary: '#133458',
+    colorForeground: '#133458',
+    colorMutedForeground: '#536675',
+    colorDanger: '#9a443d',
+    colorBackground: '#FAF7BB',
+    colorInput: '#fffdf0',
+    colorInputForeground: '#133458',
+    colorNeutral: '#D8D0B3',
+    fontFamily: 'Inter, sans-serif',
+    borderRadius: '2px',
+  },
+  elements: {
+    rootBox: 'w-full flex justify-center',
+    cardBox: 'bg-[#FAF7BB] rounded-2xl w-[440px] max-w-full overflow-hidden border border-[#D8D0B3]',
+    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    headerTitle: 'font-display !text-[#133458]',
+    headerSubtitle: '!text-[#536675]',
+    socialButtonsBlockButtonText: '!text-[#133458]',
+    formFieldLabel: '!text-[#133458]',
+    footerActionLink: '!text-[#838921]',
+    footerActionText: '!text-[#536675]',
+    dividerText: '!text-[#536675]',
+    identityPreviewEditButton: '!text-[#838921]',
+    formFieldSuccessText: '!text-[#838921]',
+    alertText: '!text-[#133458]',
+    logoBox: 'mb-4',
+    logoImage: 'max-h-10',
+    socialButtonsBlockButton: '!border-[#D8D0B3] !bg-[#FAF7BB] hover:!bg-[#f1edc9]',
+    formButtonPrimary: '!bg-[#133458] hover:!bg-[#838921] !text-[#FAF7BB]',
+    formFieldInput: '!border-[#D8D0B3] !bg-[#fffdf0] !text-[#133458]',
+    footerAction: '!bg-transparent',
+    dividerLine: '!bg-[#D8D0B3]',
+    alert: '!bg-[#f1edc9] !border-[#D8D0B3]',
+    otpCodeFieldInput: '!border-[#D8D0B3] !bg-[#fffdf0] !text-[#133458]',
+    formFieldRow: '',
+    main: '!bg-transparent',
+  },
+};
+
+function SignInPage() {
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[#133458] px-4 py-10">
+      <SignIn
+        routing="path"
+        path={`${basePath}/sign-in`}
+        signUpUrl={`${basePath}/sign-up`}
+      />
+    </div>
+  );
+}
+
+function SignUpPage() {
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[#133458] px-4 py-10">
+      <SignUp
+        routing="path"
+        path={`${basePath}/sign-up`}
+        signInUrl={`${basePath}/sign-in`}
+      />
+    </div>
+  );
+}
+
+function ClerkQueryClientCacheInvalidator() {
+  const { addListener } = useClerk();
+  const previousUserId = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    const unsubscribe = addListener(({ user }) => {
+      const userId = user?.id ?? null;
+      if (
+        previousUserId.current !== undefined &&
+        previousUserId.current !== userId
+      ) {
+        queryClient.clear();
+      }
+      previousUserId.current = userId;
+    });
+
+    return unsubscribe;
+  }, [addListener]);
+
+  return null;
+}
+
+function AuthSessionBridge() {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+
+    void fetch(`${basePath}/api/auth/session`, {
+      credentials: 'include',
+    }).catch(() => {
+      // The Clerk client remains the source of truth for the browser session.
+    });
+  }, [isLoaded, isSignedIn]);
+
+  return null;
+}
+
+function HomeRedirect() {
+  return (
+    <>
+      <Show when="signed-in">
+        <Redirect to="/dashboard" />
+      </Show>
+      <Show when="signed-out">
+        <Landing />
+      </Show>
+    </>
+  );
+}
+
+function ProtectedPage({ children }: { children: React.ReactNode }) {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  if (!isLoaded) {
+    return <div className="min-h-[100dvh] bg-[#FAF7BB]" />;
+  }
+
+  if (!isSignedIn) {
+    return <Redirect to="/sign-in" />;
+  }
+
+  return <>{children}</>;
+}
 
 type Icon = typeof Activity;
 type NavItem = { label: string; href: string; icon: Icon };
@@ -82,14 +248,18 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
 function AppShell({ children }: { children: React.ReactNode }) {
   const [drawer, setDrawer] = useState(false);
   const [location] = useLocation();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const title = location === '/dashboard' ? 'Ocean intelligence' : navItems.find((n) => n.href === location)?.label || 'Settings';
+  const userName = user?.fullName || user?.firstName || 'Research lead';
+  const initials = (user?.firstName?.[0] || user?.emailAddresses[0]?.emailAddress?.[0] || 'O').toUpperCase();
   return <div className="oe-shell">
     <Sidebar open={drawer} onClose={() => setDrawer(false)} />
     <main className="min-h-[100dvh] md:pl-[248px]">
       <header className="flex h-[72px] items-center justify-between border-b border-[#D8D0B3] bg-[#FAF7BB]/70 px-5 backdrop-blur md:px-10">
         <div className="flex items-center gap-3"><button onClick={() => setDrawer(true)} className="rounded-sm border border-[#D8D0B3] p-2 md:hidden" aria-label="Open navigation" data-testid="button-open-navigation"><Menu size={18} /></button><div className="hidden text-[13px] text-[#536675] md:block">Workspace / <span className="text-[#133458]">{title}</span></div><div className="font-display text-xl md:hidden">OceanEmbed</div></div>
-        <div className="flex items-center gap-3"><button className="relative rounded-sm p-2 text-[#536675] hover:bg-[#e8e2ba]" aria-label="Notifications" data-testid="button-notifications"><Bell size={17} /><span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#D99B21]" /></button><button className="hidden items-center gap-2 border-l border-[#D8D0B3] pl-3 text-left sm:flex" data-testid="button-user-menu"><span className="grid h-7 w-7 place-items-center rounded-full bg-[#838921] text-[10px] font-semibold text-[#FAF7BB]">AN</span><span className="text-xs text-[#133458]">Avery Nori</span><ChevronDown size={14} className="text-[#536675]" /></button></div>
-      </header>{children}
+        <div className="flex items-center gap-3"><button className="relative rounded-sm p-2 text-[#536675] hover:bg-[#e8e2ba]" aria-label="Notifications" data-testid="button-notifications"><Bell size={17} /><span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#D99B21]" /></button><button onClick={() => signOut({ redirectUrl: basePath || '/' })} className="hidden items-center gap-2 border-l border-[#D8D0B3] pl-3 text-left sm:flex" aria-label="Sign out" data-testid="button-user-menu"><span className="grid h-7 w-7 place-items-center rounded-full bg-[#838921] text-[10px] font-semibold text-[#FAF7BB]">{initials}</span><span className="max-w-[130px] truncate text-xs text-[#133458]">{userName}</span><ChevronDown size={14} className="text-[#536675]" /></button></div>
+       </header>{children}
     </main>
   </div>;
 }
@@ -194,11 +364,58 @@ function Landing() {
 }
 
 function Router() {
-  return <ErrorBoundary><Switch><Route path="/" component={Landing} /><Route path="/dashboard" component={Dashboard} /><Route path="/map" component={MapPage} /><Route path="/reconstructions" component={Reconstructions} /><Route path="/temperature" component={Temperature} /><Route path="/performance/architecture" component={Architecture} /><Route path="/performance" component={Performance} /><Route path="/dataset" component={Dataset} /><Route path="/settings" component={Settings} /><Route component={NotFound} /></Switch></ErrorBoundary>;
+  return <ErrorBoundary><Switch>
+    <Route path="/" component={HomeRedirect} />
+    <Route path="/sign-in/*?" component={SignInPage} />
+    <Route path="/sign-up/*?" component={SignUpPage} />
+    <Route path="/dashboard"><ProtectedPage><Dashboard /></ProtectedPage></Route>
+    <Route path="/map"><ProtectedPage><MapPage /></ProtectedPage></Route>
+    <Route path="/reconstructions"><ProtectedPage><Reconstructions /></ProtectedPage></Route>
+    <Route path="/temperature"><ProtectedPage><Temperature /></ProtectedPage></Route>
+    <Route path="/performance/architecture"><ProtectedPage><Architecture /></ProtectedPage></Route>
+    <Route path="/performance"><ProtectedPage><Performance /></ProtectedPage></Route>
+    <Route path="/dataset"><ProtectedPage><Dataset /></ProtectedPage></Route>
+    <Route path="/settings"><ProtectedPage><Settings /></ProtectedPage></Route>
+    <Route component={NotFound} />
+  </Switch></ErrorBoundary>;
+}
+
+function ClerkProviderWithRoutes() {
+  const [, setLocation] = useLocation();
+
+  return <ClerkProvider
+    publishableKey={clerkPubKey}
+    proxyUrl={clerkProxyUrl}
+    appearance={clerkAppearance}
+    signInUrl={`${basePath}/sign-in`}
+    signUpUrl={`${basePath}/sign-up`}
+    localization={{
+      signIn: {
+        start: {
+          title: 'Welcome back',
+          subtitle: 'Sign in to continue to your ocean intelligence workspace',
+        },
+      },
+      signUp: {
+        start: {
+          title: 'Create your research account',
+          subtitle: 'Join the OceanEmbed research workspace',
+        },
+      },
+    }}
+    routerPush={(to) => setLocation(stripBase(to))}
+    routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+  >
+    <QueryClientProvider client={queryClient}>
+      <ClerkQueryClientCacheInvalidator />
+      <AuthSessionBridge />
+      <TooltipProvider><Router /><Toaster /></TooltipProvider>
+    </QueryClientProvider>
+  </ClerkProvider>;
 }
 
 function App() {
-  return <QueryClientProvider client={queryClient}><TooltipProvider><Router /><Toaster /></TooltipProvider></QueryClientProvider>;
+  return <WouterRouter base={basePath}><ClerkProviderWithRoutes /></WouterRouter>;
 }
 
 export default App;
