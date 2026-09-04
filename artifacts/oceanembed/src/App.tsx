@@ -339,21 +339,21 @@ function PerformanceGraphs() {
       <div className="mt-2 space-y-2 font-data text-[10px] text-[#000000]">{depthValues.map((row) => <div key={row.depth} className="grid grid-cols-[1.4fr_1fr]"><span>{row.depth}</span><span>{row.rmse} · {row.measurements}</span></div>)}<div className="grid grid-cols-[1.4fr_1fr] border-t border-[#FAF7BB]/15 pt-2 text-[#000000]"><span>Overall Test RMSE</span><span>0.554°C · —</span></div></div>
     </section>
     <section className="oe-card bg-[#133458] p-5 text-[#FAF7BB]">
-       <div className="oe-kicker !text-[#000000]">B. Iterative improvement</div>
+       <div className="oe-kicker !text-[#D99B21]">B. Iterative improvement</div>
       <h2 className="mt-1 font-display text-2xl">SST → +SSHa → +SSHa+SSS</h2>
       <div className="mt-5 flex items-center gap-4 text-[10px] text-[#FAF7BB]/70"><span className="flex items-center gap-2"><i className="h-2 w-5 bg-[#F26A38]" /> SST only</span><span className="flex items-center gap-2"><i className="h-2 w-5 bg-[#F4B51D]" /> + SSha</span><span className="flex items-center gap-2"><i className="h-2 w-5 bg-[#19A83A]" /> + SSS</span></div>
       <div className="mt-3 h-56">
         <svg viewBox="0 0 620 250" className="h-full w-full" role="img" aria-label="Iterative improvement from SST to sea surface height anomaly to sea surface salinity">
           <g stroke="#FAF7BB" strokeOpacity=".14" strokeWidth="1">{[0, .4, .8, 1.2, 1.6].map((value) => <line key={value} x1="46" x2="600" y1={210 - (value / maxIterativeRmse) * 170} y2={210 - (value / maxIterativeRmse) * 170} />)}</g>
-          <g fill="#000000" fillOpacity=".65" fontFamily="Space Mono" fontSize="10"><text x="18" y="214">0</text><text x="11" y="171">0.4</text><text x="11" y="129">0.8</text><text x="11" y="87">1.2</text><text x="11" y="44">1.6</text></g>
+          <g fill="#FAF7BB" fillOpacity=".65" fontFamily="Space Mono" fontSize="10"><text x="18" y="214">0</text><text x="11" y="171">0.4</text><text x="11" y="129">0.8</text><text x="11" y="87">1.2</text><text x="11" y="44">1.6</text></g>
           {iterativeImprovement.map((row, index) => {
             const x = 78 + index * 130;
             return <g key={row.band}>{row.values.map((value, series) => {
               const height = (value / maxIterativeRmse) * 170;
               return <rect key={series} x={x + series * 22} y={210 - height} width="17" height={height} fill={['#F26A38', '#F4B51D', '#19A83A'][series]} />;
-            })}<text x={x + 22} y="230" textAnchor="middle" fill="#000000" fillOpacity=".72" fontFamily="Space Mono" fontSize="9">{row.band}</text></g>;
+            })}<text x={x + 22} y="230" textAnchor="middle" fill="#FAF7BB" fillOpacity=".72" fontFamily="Space Mono" fontSize="9">{row.band}</text></g>;
           })}
-          <text x="310" y="248" textAnchor="middle" fill="#000000" fillOpacity=".48" fontFamily="Space Mono" fontSize="9">DEPTH BAND · RMSE (°C)</text>
+          <text x="310" y="248" textAnchor="middle" fill="#FAF7BB" fillOpacity=".48" fontFamily="Space Mono" fontSize="9">DEPTH BAND · RMSE (°C)</text>
         </svg>
       </div>
     </section>
