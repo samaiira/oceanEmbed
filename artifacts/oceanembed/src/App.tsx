@@ -335,8 +335,8 @@ function PerformanceGraphs() {
           <text x="310" y="248" textAnchor="middle" fill="#000000" fillOpacity=".48" fontFamily="Space Mono" fontSize="9">DEPTH BAND · RMSE (°C)</text>
         </svg>
       </div>
-      <div className="mt-3 grid grid-cols-[1.4fr_1fr] border-t border-[#FAF7BB]/15 pt-3 font-data text-[10px] text-[#FAF7BB]/65"><span>Depth band</span><span>RMSE (°C) · # measurements</span></div>
-      <div className="mt-2 space-y-2 font-data text-[10px]">{depthValues.map((row) => <div key={row.depth} className="grid grid-cols-[1.4fr_1fr]"><span>{row.depth}</span><span>{row.rmse} · {row.measurements}</span></div>)}<div className="grid grid-cols-[1.4fr_1fr] border-t border-[#FAF7BB]/15 pt-2 text-[#D99B21]"><span>Overall Test RMSE</span><span>0.554°C · —</span></div></div>
+      <div className="mt-3 grid grid-cols-[1.4fr_1fr] border-t border-[#FAF7BB]/15 pt-3 font-data text-[10px] text-[#000000]/65"><span>Depth band</span><span>RMSE (°C) · # measurements</span></div>
+      <div className="mt-2 space-y-2 font-data text-[10px] text-[#000000]">{depthValues.map((row) => <div key={row.depth} className="grid grid-cols-[1.4fr_1fr]"><span>{row.depth}</span><span>{row.rmse} · {row.measurements}</span></div>)}<div className="grid grid-cols-[1.4fr_1fr] border-t border-[#FAF7BB]/15 pt-2 text-[#000000]"><span>Overall Test RMSE</span><span>0.554°C · —</span></div></div>
     </section>
     <section className="oe-card bg-[#133458] p-5 text-[#FAF7BB]">
       <div className="oe-kicker !text-[#D99B21]">B. Iterative improvement</div>
