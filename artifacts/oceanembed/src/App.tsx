@@ -312,7 +312,7 @@ function PerformanceGraphs() {
   const maxIterativeRmse = 1.6;
   return <div className="mt-5 grid gap-5 lg:grid-cols-2">
     <section className="oe-card bg-[#133458] p-5 text-[#FAF7BB]">
-      <div className="oe-kicker !text-[#D99B21]">A. RMSE by depth band</div>
+       <div className="oe-kicker !text-[#000000]">A. RMSE by depth band</div>
       <h2 className="mt-1 font-display text-2xl">North Indian Ocean test results</h2>
       <div className="mt-5 h-56">
         <svg viewBox="0 0 620 250" className="h-full w-full" role="img" aria-label="RMSE by depth band in degrees Celsius">
@@ -339,7 +339,7 @@ function PerformanceGraphs() {
       <div className="mt-2 space-y-2 font-data text-[10px] text-[#000000]">{depthValues.map((row) => <div key={row.depth} className="grid grid-cols-[1.4fr_1fr]"><span>{row.depth}</span><span>{row.rmse} · {row.measurements}</span></div>)}<div className="grid grid-cols-[1.4fr_1fr] border-t border-[#FAF7BB]/15 pt-2 text-[#000000]"><span>Overall Test RMSE</span><span>0.554°C · —</span></div></div>
     </section>
     <section className="oe-card bg-[#133458] p-5 text-[#FAF7BB]">
-      <div className="oe-kicker !text-[#D99B21]">B. Iterative improvement</div>
+       <div className="oe-kicker !text-[#000000]">B. Iterative improvement</div>
       <h2 className="mt-1 font-display text-2xl">SST → +SSHa → +SSHa+SSS</h2>
       <div className="mt-5 flex items-center gap-4 text-[10px] text-[#FAF7BB]/70"><span className="flex items-center gap-2"><i className="h-2 w-5 bg-[#F26A38]" /> SST only</span><span className="flex items-center gap-2"><i className="h-2 w-5 bg-[#F4B51D]" /> + SSha</span><span className="flex items-center gap-2"><i className="h-2 w-5 bg-[#19A83A]" /> + SSS</span></div>
       <div className="mt-3 h-56">
