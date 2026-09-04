@@ -111,6 +111,8 @@
 .oe-page { padding: 31px clamp(18px, 4vw, 56px) 56px; max-width: 1680px; margin: 0 auto; }
 .oe-data-line { stroke: hsl(var(--secondary)); stroke-width: 2; fill: none; }
 .oe-data-line-amber { stroke: hsl(var(--accent)); stroke-width: 2.5; fill: none; }
+/* Keep reconstruction axis labels inside the clipped chart card. */
+.oe-card [class~="bottom-[-25px]"] { bottom: 8px !important; }
 @media (max-width: 767px) {
   .oe-page { padding: 24px 16px 40px; }
   .mobile-scroll { overflow-x: auto; scrollbar-width: none; }
