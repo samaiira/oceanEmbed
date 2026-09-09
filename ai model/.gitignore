@@ -1,0 +1,46 @@
+# Data (too large for git)
+data/raw/
+data/interim/
+data/processed/
+
+# Checkpoints
+checkpoints/
+*.pt
+*.pth
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+venv/
+env/
+*.pyc
+__pycache__/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Logs & Outputs
+logs/
+outputs/figures/
+outputs/metrics/
+*.log
+runs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+build/
+dist/
+*.egg-info/

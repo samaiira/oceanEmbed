@@ -1,0 +1,50 @@
+name: oceanembed
+channels:
+  - conda-forge
+  - pytorch
+  - defaults
+dependencies:
+  # Core Python
+  - python=3.10
+  
+  # Scientific Computing
+  - numpy
+  - scipy
+  - pandas
+  - xarray
+  - netCDF4
+  
+  # Geospatial
+  - rasterio
+  - geopandas
+  - cartopy
+  - pyproj
+  
+  # Visualization
+  - matplotlib
+  - seaborn
+  - plotly
+  
+  # PyTorch
+  - pytorch::pytorch::cpu
+  - pytorch::torchvision
+  - pytorch::torchaudio
+  - pytorch::pytorch-cuda=11.8  # Change to cpu if needed
+  
+  # Data Loading & Processing
+  - scikit-learn
+  - pillow
+  
+  # Deep Learning
+  - pip
+  - pip:
+    - torch-geometric
+    - cdsapi
+    - argovis
+    - requests
+    - tqdm
+    - pyyaml
+    - tensorboard
+    - wandb
+    - einops
+    - pytorch-lightning
