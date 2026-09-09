@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "OceanEmbed Research Dashboard"
+description = "A premium oceanographic research platform for exploring satellite observations, subsurface temperature reconstructions, scientific analytics, model performance, datasets, and settings."
+version = "1.0.0"
+id = "artifacts/oceanembed"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20551
+
+[services.development]
+run = "pnpm --filter @workspace/oceanembed run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/oceanembed", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/oceanembed/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20551"
+BASE_PATH = "/"
