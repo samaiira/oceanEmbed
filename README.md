@@ -43,7 +43,7 @@ OceanEmbed uses a:
 
 The convolutional encoder learns spatial patterns from surface ocean observations, while the MLP decoder reconstructs the corresponding subsurface temperature profile.
 
-```text
+```text:
 Surface Ocean Observations
           ↓
 Convolutional Encoder
