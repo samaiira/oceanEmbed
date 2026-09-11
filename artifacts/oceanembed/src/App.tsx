@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Link, Redirect, Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import {
   Activity, ArrowDownRight, ArrowRight, Bell, Check, ChevronDown,
@@ -14,6 +14,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { SupabaseAuthProvider, useSupabaseAuth } from '@/lib/supabase-auth-context';
 import { AuthCard } from '@/components/auth-card';
+import { NewReconstructionDialog, type ReconstructionResult } from '@/components/new-reconstruction-dialog';
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -83,6 +84,100 @@ const iterativeImprovement = [
   { band: 'Mid', values: [0.92, 0.61, 0.56] },
   { band: 'Deep', values: [0.31, 0.22, 0.26] },
 ];
+
+const defaultReconstructions: ReconstructionResult[] = [
+  {
+    id: 'run-arabian',
+    name: 'Arabian Sea Cast',
+    subregion: 'Arabian Sea',
+    latitude: 15.5,
+    longitude: 65.0,
+    date: '2023-01-15',
+    depths: [0, 50, 100, 200, 500, 1000, 1500, 2000],
+    temperatures: [28.2, 22.1, 17.0, 11.4, 6.0, 4.1, 3.4, 3.1],
+    sst: 28.2,
+    ssha: 0.04,
+    sss: 36.2,
+    rmse: 0.536,
+    z20: 118,
+    createdAt: '2023-01-15T00:00:00Z',
+  },
+  {
+    id: 'run-bengal',
+    name: 'Bay of Bengal Cast',
+    subregion: 'Bay of Bengal',
+    latitude: 14.2,
+    longitude: 88.5,
+    date: '2023-01-18',
+    depths: [0, 50, 100, 200, 500, 1000, 1500, 2000],
+    temperatures: [28.6, 23.0, 17.8, 11.9, 6.2, 4.2, 3.5, 3.2],
+    sst: 28.6,
+    ssha: 0.08,
+    sss: 33.1,
+    rmse: 0.552,
+    z20: 126,
+    createdAt: '2023-01-18T00:00:00Z',
+  },
+];
+
+interface ReconstructionsContextType {
+  runs: ReconstructionResult[];
+  activeRun: ReconstructionResult;
+  setActiveRun: (run: ReconstructionResult) => void;
+  dialogOpen: boolean;
+  setDialogOpen: (open: boolean) => void;
+  addRun: (newRun: ReconstructionResult) => void;
+  updateRun: (updatedRun: ReconstructionResult) => void;
+}
+
+const ReconstructionsContext = createContext<ReconstructionsContextType | null>(null);
+
+function useReconstructions() {
+  const ctx = useContext(ReconstructionsContext);
+  if (!ctx) {
+    throw new Error('useReconstructions must be used within ReconstructionsProvider');
+  }
+  return ctx;
+}
+
+function ReconstructionsProvider({ children }: { children: React.ReactNode }) {
+  const [runs, setRuns] = useState<ReconstructionResult[]>(defaultReconstructions);
+  const [activeRun, setActiveRun] = useState<ReconstructionResult>(defaultReconstructions[0]);
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+
+  const addRun = (newRun: ReconstructionResult) => {
+    setRuns((prev) => [newRun, ...prev]);
+    setActiveRun(newRun);
+  };
+
+  const updateRun = (updatedRun: ReconstructionResult) => {
+    setRuns((prev) => prev.map((r) => (r.id === updatedRun.id ? updatedRun : r)));
+    setActiveRun(updatedRun);
+  };
+
+  return (
+    <ReconstructionsContext.Provider
+      value={{
+        runs,
+        activeRun,
+        setActiveRun,
+        dialogOpen,
+        setDialogOpen,
+        addRun,
+        updateRun,
+      }}
+    >
+      {children}
+      <NewReconstructionDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onRunComplete={(newRun) => {
+          addRun(newRun);
+        }}
+      />
+    </ReconstructionsContext.Provider>
+  );
+}
 
 function Logo({ light = false }: { light?: boolean }) {
   return (
@@ -252,44 +347,67 @@ function SectionHeading({ eyebrow, title, description, action }: { eyebrow: stri
 
 function StatCard({ label, value, note, icon: StatIcon, accent = false }: { label: string; value: string; note: string; icon: Icon; accent?: boolean }) {
   return (
-    <div className={`oe-card relative overflow-hidden p-5 ${accent ? 'bg-[#133458] text-[#FAF7BB]' : ''}`}>
-      <div className={`flex items-center justify-between ${accent ? 'text-[#FAF7BB]/65' : 'text-[#536675]'}`}>
-        <span className="oe-label">{label}</span>
-        <StatIcon size={17} strokeWidth={1.5} />
+    <div className={`oe-card relative overflow-hidden p-5 ${accent ? 'border-[#133458] ring-1 ring-[#133458]/30 shadow-sm' : ''}`}>
+      <div className="flex items-center justify-between text-[#24384d]">
+        <span className="oe-label font-bold text-[#133458]">{label}</span>
+        <StatIcon size={17} strokeWidth={1.8} className={accent ? 'text-[#838921]' : 'text-[#133458]'} />
       </div>
-      <div className={`mt-6 font-data text-[29px] tracking-[-.06em] ${accent ? 'text-[#FAF7BB]' : 'text-[#133458]'}`}>
+      <div className="mt-6 font-data text-[29px] font-bold tracking-[-.06em] text-[#133458]">
         {value}
       </div>
-      <div className={`mt-2 flex items-center gap-1 text-[11px] ${accent ? 'text-[#FAF7BB]/55' : 'text-[#536675]'}`}>
+      <div className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-[#24384d]">
         <ArrowDownRight size={13} className="text-[#838921]" />{note}
       </div>
-      {accent && <div className="absolute -bottom-12 -right-7 h-28 w-28 rounded-full border border-[#FAF7BB]/10" />}
+      {accent && <div className="absolute -bottom-12 -right-7 h-28 w-28 rounded-full border border-[#133458]/10" />}
     </div>
   );
 }
 
 function OceanMap({ compact = false, selectedLayer = 'Sea surface temperature', onSelect }: { compact?: boolean; selectedLayer?: string; onSelect?: (name: string) => void }) {
-  const spots = [{ x: 39, y: 39, n: 'Arabian Sea' }, { x: 67, y: 39, n: 'Bay of Bengal' }];
+  const { runs, activeRun, setActiveRun } = useReconstructions();
+
+  const getCoordinates = (lat: number, lon: number) => {
+    const clampedLon = Math.max(45, Math.min(105, lon));
+    const clampedLat = Math.max(5, Math.min(30, lat));
+    const x = ((clampedLon - 45) / 60) * 900 + 50;
+    const y = ((30 - clampedLat) / 25) * 420 + 40;
+    return { x, y };
+  };
+
   return (
     <div className={`relative overflow-hidden border border-[#294966] bg-[#133458] ${compact ? 'h-[300px]' : 'h-[490px]'}`}>
       <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(#8da9a930 1px, transparent 1px),linear-gradient(90deg,#8da9a930 1px,transparent 1px)', backgroundSize: '42px 42px' }} />
-      <svg viewBox="0 0 1000 500" className="absolute inset-0 h-full w-full" aria-label="Ocean data map">
+      <svg id="ocean-map-svg" viewBox="0 0 1000 500" className="absolute inset-0 h-full w-full" aria-label="Ocean data map">
         <path d="M0 0H1000V500H0z" fill="#133458" />
         <path d="M0 82C53 64 67 99 105 90c36-9 26-64 66-58 30 5 41 45 70 40 31-5 27-40 65-27 34 12 11 57 43 65 31 8 39-25 65-21 35 5 17 60 53 72 34 11 43-44 77-40 32 4 29 52 63 56 33 4 51-24 72-13 28 15 7 61 48 70 30 7 42-33 70-24 32 10 14 48 51 52 37 4 42-37 72-25 31 13 18 64 50 72 28 7 51-16 72-8v78H0z" fill="#567068" opacity=".9" />
         <path d="M0 235c37-27 55-5 82-16 35-14 21-63 57-57 35 6 31 47 69 51 35 4 41-28 72-17 30 11 12 61 46 68 39 8 50-30 78-18 31 14 11 67 47 75 37 8 45-30 77-20 32 10 16 60 51 68 42 10 49-31 78-23 36 10 15 63 53 72 38 9 39-38 70-26 32 12 20 65 56 73 39 9 44-31 76-24 33 8 24 42 58 53l42 8v-94c-30-5-47-27-77-21-33 6-33 40-68 31-36-10-19-67-56-76-34-8-41 43-76 34-34-9-22-62-57-73-32-10-46 32-77 22-35-11-21-65-55-74-38-11-45 29-75 20-33-10-17-66-53-76-33-9-42 31-77 19-39-13-21-62-55-71-38-9-43 32-77 22-36-11-30-47-63-54-34-7-33 18-69 26-32 7-45-14-82 11z" fill="#567068" opacity=".55" transform="translate(0 150)" />
         <path d="M20 442c120-24 174 12 274-13s166-4 261 7 204-29 425 12" stroke="#D99B21" strokeWidth="1.2" strokeDasharray="5 7" fill="none" opacity=".7" />
-        {spots.map((s) => (
-          <g key={s.n} transform={`translate(${s.x * 10},${s.y * 10})`} onClick={() => onSelect?.(s.n)} className="cursor-pointer">
-            <circle r="11" fill="#D99B21" opacity=".16">
-              <animate attributeName="r" values="8;14;8" dur="3s" repeatCount="indefinite" />
-            </circle>
-            <circle r="3.5" fill="#D99B21" stroke="#FAF7BB" strokeWidth="1" />
-            <text x="9" y="3" fill="#FAF7BB" fontSize="11" fontFamily="Space Mono">{s.n}</text>
-          </g>
-        ))}
+        {runs.map((run) => {
+          const { x, y } = getCoordinates(run.latitude, run.longitude);
+          const isActive = activeRun?.id === run.id;
+          return (
+            <g
+              key={run.id}
+              transform={`translate(${x},${y})`}
+              onClick={() => {
+                setActiveRun(run);
+                onSelect?.(run.name);
+              }}
+              className="cursor-pointer"
+            >
+              <circle r={isActive ? 16 : 11} fill="#D99B21" opacity={isActive ? 0.35 : 0.16}>
+                <animate attributeName="r" values={isActive ? '12;20;12' : '8;14;8'} dur={isActive ? '2s' : '3s'} repeatCount="indefinite" />
+              </circle>
+              <circle r={isActive ? 5 : 3.5} fill={isActive ? '#D99B21' : '#FAF7BB'} stroke="#133458" strokeWidth="1.5" />
+              <text x="10" y="3" fill={isActive ? '#D99B21' : '#FAF7BB'} fontSize={isActive ? '12' : '11'} fontWeight={isActive ? 'bold' : 'normal'} fontFamily="Space Mono">
+                {run.name.split('(')[0].trim()}
+              </text>
+            </g>
+          );
+        })}
       </svg>
       <div className="absolute left-4 top-4 flex items-center gap-2 border border-[#FAF7BB]/15 bg-[#133458]/75 px-3 py-2 text-[10px] text-[#FAF7BB]/75 backdrop-blur">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#D99B21]" /> NORTH INDIAN OCEAN <span className="font-data text-[#FAF7BB]/45">· {studyBounds}</span>
+        <span className="h-1.5 w-1.5 rounded-full bg-[#D99B21]" /> NORTH INDIAN OCEAN <span className="font-data text-[#FAF7BB]/45">· {studyBounds} · {runs.length} ACTIVE CASTS</span>
       </div>
       <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
         <div className="text-[10px] text-[#FAF7BB]/55">
@@ -343,15 +461,15 @@ function PerformanceGraphs() {
   const maxIterativeRmse = 1.6;
   return (
     <div className="mt-5 grid gap-5 lg:grid-cols-2">
-      <section className="oe-card bg-[#133458] p-5 text-[#FAF7BB]">
-        <div className="oe-kicker !text-[#FAF7BB]/70">A. RMSE by depth band</div>
-        <h2 className="mt-1 font-display text-2xl text-[#FAF7BB]">North Indian Ocean test results</h2>
+      <section className="oe-card p-5">
+        <div className="oe-kicker text-[#133458] font-bold">A. RMSE by depth band</div>
+        <h2 className="mt-1 font-display text-2xl text-[#133458]">North Indian Ocean test results</h2>
         <div className="mt-5 h-56">
           <svg viewBox="0 0 620 250" className="h-full w-full" role="img" aria-label="RMSE by depth band in degrees Celsius">
-            <g stroke="#FAF7BB" strokeOpacity=".14" strokeWidth="1">
+            <g stroke="#D8D0B3" strokeWidth="1">
               {[0, .3, .6, .9].map((value) => <line key={value} x1="46" x2="600" y1={210 - (value / maxRmse) * 170} y2={210 - (value / maxRmse) * 170} />)}
             </g>
-            <g fill="#FAF7BB" fillOpacity=".65" fontFamily="Space Mono" fontSize="10">
+            <g fill="#133458" fontFamily="Space Mono" fontSize="10" fontWeight="700">
               <text x="11" y="214">0.0</text><text x="11" y="157">0.3</text><text x="11" y="100">0.6</text><text x="11" y="44">0.9</text>
             </g>
             {depthValues.map((row, index) => {
@@ -360,46 +478,46 @@ function PerformanceGraphs() {
               const x = 78 + index * 130;
               return (
                 <g key={row.depth}>
-                  <rect x={x} y={210 - height} width="58" height={height} fill="#2F78D0" />
-                  <text x={x + 29} y={200 - height} textAnchor="middle" fill="#FAF7BB" fontFamily="Space Mono" fontSize="10">{row.rmse}</text>
-                  <text x={x + 29} y="230" textAnchor="middle" fill="#FAF7BB" fillOpacity=".72" fontFamily="Space Mono" fontSize="9">{row.depth.split(' ')[0]}</text>
+                  <rect x={x} y={210 - height} width="58" height={height} fill="#2F78D0" rx="1" />
+                  <text x={x + 29} y={200 - height} textAnchor="middle" fill="#133458" fontFamily="Space Mono" fontSize="11" fontWeight="700">{row.rmse}</text>
+                  <text x={x + 29} y="230" textAnchor="middle" fill="#133458" fontFamily="Space Mono" fontSize="10" fontWeight="700">{row.depth.split(' ')[0]}</text>
                 </g>
               );
             })}
-            <text x="310" y="248" textAnchor="middle" fill="#FAF7BB" fillOpacity=".48" fontFamily="Space Mono" fontSize="9">DEPTH BAND · RMSE (°C)</text>
+            <text x="310" y="248" textAnchor="middle" fill="#24384d" fontFamily="Space Mono" fontSize="9" fontWeight="700">DEPTH BAND · RMSE (°C)</text>
           </svg>
         </div>
-        <div className="mt-3 grid grid-cols-[1.4fr_1fr] border-t border-[#FAF7BB]/15 pt-3 font-data text-[10px] text-[#FAF7BB]/65">
+        <div className="mt-3 grid grid-cols-[1.4fr_1fr] border-t border-[#D8D0B3] pt-3 font-data text-[10px] text-[#133458] font-bold">
           <span>Depth band</span>
           <span>RMSE (°C) · # measurements</span>
         </div>
-        <div className="mt-2 space-y-2 font-data text-[10px] text-[#FAF7BB]">
+        <div className="mt-2 space-y-2 font-data text-[10px] text-[#133458]">
           {depthValues.map((row) => (
             <div key={row.depth} className="grid grid-cols-[1.4fr_1fr]">
-              <span>{row.depth}</span>
-              <span>{row.rmse} · {row.measurements}</span>
+              <span className="font-bold">{row.depth}</span>
+              <span className="font-semibold text-[#24384d]">{row.rmse} · {row.measurements}</span>
             </div>
           ))}
-          <div className="grid grid-cols-[1.4fr_1fr] border-t border-[#FAF7BB]/15 pt-2 text-[#FAF7BB]">
+          <div className="grid grid-cols-[1.4fr_1fr] border-t border-[#D8D0B3] pt-2 text-[#133458] font-bold">
             <span>Overall Test RMSE</span>
-            <span>0.554°C · —</span>
+            <span className="text-[#838921]">0.554°C · —</span>
           </div>
         </div>
       </section>
-      <section className="oe-card bg-[#133458] p-5 text-[#FAF7BB]">
-        <div className="oe-kicker !text-[#FAF7BB]/70">B. Iterative improvement</div>
-        <h2 className="mt-1 font-display text-2xl text-[#FAF7BB]">SST → +SSHa → +SSHa+SSS</h2>
-        <div className="mt-5 flex items-center gap-4 text-[10px] text-[#FAF7BB]/70">
-          <span className="flex items-center gap-2"><i className="h-2 w-5 bg-[#F26A38]" /> SST only</span>
-          <span className="flex items-center gap-2"><i className="h-2 w-5 bg-[#F4B51D]" /> + SSHa</span>
-          <span className="flex items-center gap-2"><i className="h-2 w-5 bg-[#19A83A]" /> + SSS</span>
+      <section className="oe-card p-5">
+        <div className="oe-kicker text-[#133458] font-bold">B. Iterative improvement</div>
+        <h2 className="mt-1 font-display text-2xl text-[#133458]">SST → +SSHa → +SSHa+SSS</h2>
+        <div className="mt-5 flex items-center gap-4 text-[11px] text-[#133458] font-bold">
+          <span className="flex items-center gap-2"><i className="h-2.5 w-5 bg-[#F26A38] rounded-xs" /> SST only</span>
+          <span className="flex items-center gap-2"><i className="h-2.5 w-5 bg-[#F4B51D] rounded-xs" /> + SSHa</span>
+          <span className="flex items-center gap-2"><i className="h-2.5 w-5 bg-[#19A83A] rounded-xs" /> + SSS</span>
         </div>
         <div className="mt-3 h-56">
           <svg viewBox="0 0 620 250" className="h-full w-full" role="img" aria-label="Iterative improvement from SST to sea surface height anomaly to sea surface salinity">
-            <g stroke="#FAF7BB" strokeOpacity=".14" strokeWidth="1">
+            <g stroke="#D8D0B3" strokeWidth="1">
               {[0, .4, .8, 1.2, 1.6].map((value) => <line key={value} x1="46" x2="600" y1={210 - (value / maxIterativeRmse) * 170} y2={210 - (value / maxIterativeRmse) * 170} />)}
             </g>
-            <g fill="#FAF7BB" fillOpacity=".65" fontFamily="Space Mono" fontSize="10">
+            <g fill="#133458" fontFamily="Space Mono" fontSize="10" fontWeight="700">
               <text x="18" y="214">0</text><text x="11" y="171">0.4</text><text x="11" y="129">0.8</text><text x="11" y="87">1.2</text><text x="11" y="44">1.6</text>
             </g>
             {iterativeImprovement.map((row, index) => {
@@ -408,14 +526,30 @@ function PerformanceGraphs() {
                 <g key={row.band}>
                   {row.values.map((value, series) => {
                     const height = (value / maxIterativeRmse) * 170;
-                    return <rect key={series} x={x + series * 22} y={210 - height} width="17" height={height} fill={['#F26A38', '#F4B51D', '#19A83A'][series]} />;
+                    return <rect key={series} x={x + series * 22} y={210 - height} width="17" height={height} fill={['#F26A38', '#F4B51D', '#19A83A'][series]} rx="1" />;
                   })}
-                  <text x={x + 22} y="230" textAnchor="middle" fill="#FAF7BB" fillOpacity=".72" fontFamily="Space Mono" fontSize="9">{row.band}</text>
+                  <text x={x + 22} y="230" textAnchor="middle" fill="#133458" fontFamily="Space Mono" fontSize="10" fontWeight="700">{row.band}</text>
                 </g>
               );
             })}
-            <text x="310" y="248" textAnchor="middle" fill="#FAF7BB" fillOpacity=".48" fontFamily="Space Mono" fontSize="9">DEPTH BAND · RMSE (°C)</text>
+            <text x="310" y="248" textAnchor="middle" fill="#24384d" fontFamily="Space Mono" fontSize="9" fontWeight="700">DEPTH BAND · RMSE (°C)</text>
           </svg>
+        </div>
+        <div className="mt-3 grid grid-cols-4 border-t border-[#D8D0B3] pt-3 font-data text-[10px] text-[#133458] font-bold">
+          <span>Depth Band</span>
+          <span className="text-[#F26A38]">SST</span>
+          <span className="text-[#d4990e]">+ SSHa</span>
+          <span className="text-[#19A83A]">+ SSS</span>
+        </div>
+        <div className="mt-2 space-y-2 font-data text-[10px] text-[#133458]">
+          {iterativeImprovement.map((row) => (
+            <div key={row.band} className="grid grid-cols-4">
+              <span className="font-bold">{row.band}</span>
+              <span className="font-semibold text-[#F26A38]">{row.values[0]}°C</span>
+              <span className="font-semibold text-[#d4990e]">{row.values[1]}°C</span>
+              <span className="font-semibold text-[#19A83A]">{row.values[2]}°C</span>
+            </div>
+          ))}
         </div>
       </section>
     </div>
@@ -423,7 +557,8 @@ function PerformanceGraphs() {
 }
 
 function Dashboard() {
-  const [selected, setSelected] = useState('Arabian Sea');
+  const { runs, activeRun, setActiveRun, setDialogOpen } = useReconstructions();
+  const [selected, setSelected] = useState(activeRun?.name || 'Arabian Sea');
   const { user, profile, userId } = useSupabaseAuth();
   const [copied, setCopied] = useState(false);
 
@@ -483,16 +618,20 @@ function Dashboard() {
           title="Ocean intelligence"
           description="A North Indian Ocean research view built from surface observations and subsurface temperature profiles."
           action={
-            <button className="oe-control oe-primary flex items-center gap-2" data-testid="button-new-reconstruction">
+            <button
+              onClick={() => setDialogOpen(true)}
+              className="oe-control oe-primary flex items-center gap-2"
+              data-testid="button-new-reconstruction"
+            >
               <Plus size={15} /> New reconstruction
             </button>
           }
         />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Overall Test RMSE" value="0.554°C" note="North Indian Ocean test set" icon={Activity} accent />
-          <StatCard label="Total Floats" value="228" note="183 train · 45 test" icon={Layers3} />
+          <StatCard label="Overall Test RMSE" value={`${activeRun ? activeRun.rmse : '0.554'}°C`} note={`Active: ${activeRun.name}`} icon={Activity} accent />
+          <StatCard label="Active Reconstructions" value={`${runs.length}`} note="User casts & benchmark runs" icon={Layers3} />
           <StatCard label="Measurements" value="141,433" note="January 2023 study period" icon={Database} />
-          <StatCard label="Train / Test Floats" value="183 / 45" note="80/20 by float" icon={Sparkles} />
+          <StatCard label="Total Floats" value="228" note="183 train · 45 test (80/20)" icon={Sparkles} />
         </div>
         <div className="mt-5 grid gap-5 xl:grid-cols-[1.55fr_1fr]">
           <section className="oe-card p-4 sm:p-5">
@@ -507,29 +646,41 @@ function Dashboard() {
             </div>
             <OceanMap compact onSelect={setSelected} />
             <div className="mt-3 flex items-center justify-between text-xs text-[#536675]">
-              <span>Selected region: <strong className="text-[#133458]">{selected}</strong></span>
+              <span>Active cast: <strong className="text-[#133458]">{activeRun.name}</strong> ({activeRun.latitude}°N, {activeRun.longitude}°E)</span>
               <span className="font-data text-[10px]">{studyBounds}</span>
             </div>
           </section>
           <section className="oe-card p-5">
             <div className="oe-kicker mb-1">At a glance</div>
-            <h2 className="font-display text-2xl text-[#133458]">Field notes</h2>
-            <div className="mt-6 space-y-5">
-              {[['Arabian Sea', 'North Indian Ocean profile field', 'Study region'], ['Bay of Bengal', 'North Indian Ocean profile field', 'Study region']].map(([name, copy, time], i) => (
-                <div className="flex gap-3" key={name}>
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-2xl text-[#133458]">Field notes</h2>
+              <span className="font-data text-[10px] text-[#838921]">{runs.length} runs available</span>
+            </div>
+            <div className="mt-4 space-y-3 max-h-[340px] overflow-y-auto pr-1">
+              {runs.map((run, i) => (
+                <div
+                  className={`flex gap-3 p-2.5 rounded-sm cursor-pointer transition-colors border ${activeRun.id === run.id ? 'border-[#D99B21] bg-[#f1edc9]' : 'border-transparent hover:bg-[#f5f1d6]'}`}
+                  key={run.id}
+                  onClick={() => {
+                    setActiveRun(run);
+                    setSelected(run.name);
+                  }}
+                >
                   <div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${i === 0 ? 'bg-[#D99B21]' : 'bg-[#838921]'}`} />
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
-                      <div className="text-[13px] font-semibold text-[#133458]">{name}</div>
-                      <div className="font-data text-[9px] text-[#8a927f]">{time}</div>
+                      <div className="text-[13px] font-semibold text-[#133458] truncate">{run.name}</div>
+                      <div className="font-data text-[10px] font-bold text-[#133458] shrink-0">{run.date}</div>
                     </div>
-                    <p className="mt-1 text-xs leading-5 text-[#536675]">{copy}</p>
+                    <p className="mt-0.5 text-xs text-[#24384d] font-medium truncate">
+                      {run.latitude}°N, {run.longitude}°E · SST {run.sst}°C · {run.depths.length} depths
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
-            <Link href="/reconstructions" className="mt-7 flex w-full items-center justify-center gap-2 border-t border-[#D8D0B3] pt-5 text-xs font-semibold text-[#838921]" data-testid="link-view-reconstructions">
-              View reconstruction queue <ArrowRight size={14} />
+            <Link href="/reconstructions" className="mt-4 flex w-full items-center justify-center gap-2 border-t border-[#D8D0B3] pt-4 text-xs font-semibold text-[#838921]" data-testid="link-view-reconstructions">
+              View full reconstruction studio <ArrowRight size={14} />
             </Link>
           </section>
         </div>
@@ -540,13 +691,13 @@ function Dashboard() {
                 <div className="oe-kicker mb-1">Test signal</div>
                 <h2 className="font-display text-2xl text-[#133458]">North Indian Ocean RMSE</h2>
               </div>
-              <div className="flex items-center gap-2 text-[10px] text-[#536675]">
+              <div className="flex items-center gap-2 text-[10px] font-semibold text-[#24384d]">
                 <span className="h-2 w-2 rounded-full bg-[#133458]" /> Predicted
                 <span className="ml-2 h-2 w-2 rounded-full bg-[#9caf68]" /> Observed
               </div>
             </div>
             <div className="h-44"><Chart variant="depth" /></div>
-            <div className="mt-1 flex justify-between font-data text-[9px] text-[#8a927f]">
+            <div className="mt-1 flex justify-between font-data text-[10px] font-bold text-[#133458]">
               <span>0.242°C</span><span>Overall Test RMSE 0.554°C</span><span>0.856°C</span>
             </div>
           </section>
@@ -570,9 +721,100 @@ function Dashboard() {
 }
 
 function MapNio() {
+  const { runs, activeRun, setActiveRun, setDialogOpen } = useReconstructions();
   const [layer, setLayer] = useState('Sea surface temperature');
-  const [selected, setSelected] = useState('Arabian Sea');
+  const [selected, setSelected] = useState(activeRun?.name || 'Arabian Sea');
+  const [isExporting, setIsExporting] = useState(false);
   const layers = ['Sea surface temperature', 'Subsurface reconstruction', 'Model confidence'];
+
+  const handleExportView = () => {
+    const svgElement = document.getElementById('ocean-map-svg') as SVGSVGElement | null;
+    if (!svgElement) return;
+
+    setIsExporting(true);
+
+    try {
+      const serializer = new XMLSerializer();
+      let svgString = serializer.serializeToString(svgElement);
+
+      if (!svgString.includes('xmlns=')) {
+        svgString = svgString.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const URL = window.URL || window.webkitURL || window;
+      const blobURL = URL.createObjectURL(svgBlob);
+
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 2000;
+        canvas.height = 1000;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          // Deep ocean background
+          ctx.fillStyle = '#133458';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // Draw map SVG
+          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+          // Overlay metadata banner
+          ctx.fillStyle = 'rgba(19, 52, 88, 0.90)';
+          ctx.fillRect(40, 30, 840, 84);
+          ctx.strokeStyle = '#D8D0B3';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(40, 30, 840, 84);
+
+          ctx.fillStyle = '#D99B21';
+          ctx.font = 'bold 20px "Space Mono", monospace';
+          ctx.fillText('OCEANEMBED · NORTH INDIAN OCEAN', 65, 65);
+
+          ctx.fillStyle = '#FAF7BB';
+          ctx.font = '15px "Space Mono", monospace';
+          ctx.fillText(`Field Layer: ${layer} · ${runs.length} Active Casts · Bounds: 5°–30°N, 45°–105°E`, 65, 93);
+
+          // Footer stamp
+          ctx.fillStyle = 'rgba(250, 247, 187, 0.75)';
+          ctx.font = '13px "Space Mono", monospace';
+          ctx.fillText(`Exported on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} · OceanEmbed Research Lab`, 40, 970);
+
+          canvas.toBlob((pngBlob) => {
+            if (pngBlob) {
+              const pngUrl = URL.createObjectURL(pngBlob);
+              const downloadLink = document.createElement('a');
+              downloadLink.href = pngUrl;
+              downloadLink.download = `oceanembed-nio-map-${layer.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().slice(0, 10)}.png`;
+              document.body.appendChild(downloadLink);
+              downloadLink.click();
+              document.body.removeChild(downloadLink);
+              setTimeout(() => URL.revokeObjectURL(pngUrl), 1000);
+            }
+            setIsExporting(false);
+          }, 'image/png');
+        } else {
+          setIsExporting(false);
+        }
+        URL.revokeObjectURL(blobURL);
+      };
+
+      image.onerror = () => {
+        // Fallback: direct SVG download
+        const downloadLink = document.createElement('a');
+        downloadLink.href = blobURL;
+        downloadLink.download = `oceanembed-nio-map-${layer.toLowerCase().replace(/\s+/g, '-')}.svg`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        setIsExporting(false);
+      };
+
+      image.src = blobURL;
+    } catch (err) {
+      console.error('Failed to export map image:', err);
+      setIsExporting(false);
+    }
+  };
 
   return (
     <AppShell>
@@ -580,35 +822,57 @@ function MapNio() {
         <SectionHeading
           eyebrow="Spatial explorer · North Indian Ocean"
           title="Ocean map"
-          description={`North Indian Ocean study field, bounded by ${studyBounds}. Select a subregion to inspect its observation history.`}
+          description={`North Indian Ocean study field, bounded by ${studyBounds}. Click any active cast or preset on the map to inspect its subsurface profile.`}
           action={
             <div className="flex gap-2">
-              <button className="oe-control flex items-center gap-2" data-testid="button-map-download">
-                <Download size={15} /> Export view
+              <button
+                onClick={() => setDialogOpen(true)}
+                className="oe-control oe-primary flex items-center gap-2"
+                data-testid="button-map-new-reconstruction"
+              >
+                <Plus size={15} /> New reconstruction
               </button>
-              <button className="oe-control p-2" aria-label="Map settings" data-testid="button-map-settings">
-                <SlidersHorizontal size={16} />
+              <button
+                onClick={handleExportView}
+                disabled={isExporting}
+                className="oe-control flex items-center gap-2 font-semibold disabled:opacity-60"
+                data-testid="button-map-download"
+                title="Download high-resolution image of the ocean map"
+              >
+                {isExporting ? (
+                  <>
+                    <RotateCcw size={15} className="animate-spin" />
+                    <span>Exporting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download size={15} />
+                    <span>Export view</span>
+                  </>
+                )}
               </button>
             </div>
           }
         />
-        <div className="grid gap-5 xl:grid-cols-[1fr_292px]">
+        <div className="grid gap-5 xl:grid-cols-[1fr_310px]">
           <section>
             <OceanMap selectedLayer={layer} onSelect={setSelected} />
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-[#536675]">
-              <span className="font-data text-[10px]">{studyRegion} · {studyBounds} · January 2023</span>
-              <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#D99B21]" /> click a region to inspect</span>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-[#24384d] font-semibold">
+              <span className="font-data text-[10px] text-[#133458] font-bold">{studyRegion} · {studyBounds} · {runs.length} Active Casts</span>
+              <span className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[#D99B21]" /> Click any marker on the map to inspect
+              </span>
             </div>
           </section>
           <aside className="oe-card p-5">
             <div className="oe-kicker mb-2">Map controls</div>
             <h2 className="font-display text-2xl text-[#133458]">Field layers</h2>
-            <div className="mt-5 space-y-2">
+            <div className="mt-4 space-y-2">
               {layers.map((name) => (
                 <button
                   key={name}
                   onClick={() => setLayer(name)}
-                  className={`flex w-full items-center gap-3 px-3 py-3 text-left text-xs transition-colors ${layer === name ? 'bg-[#133458] text-[#FAF7BB]' : 'bg-[#f1edc9] text-[#536675] hover:bg-[#e8e2ba]'}`}
+                  className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-xs transition-colors ${layer === name ? 'bg-[#133458] text-[#FAF7BB]' : 'bg-[#f1edc9] text-[#536675] hover:bg-[#e8e2ba]'}`}
                   data-testid={`button-layer-${name.toLowerCase().replaceAll(' ', '-')}`}
                 >
                   <span className={`h-2.5 w-2.5 rounded-full border ${layer === name ? 'border-[#D99B21] bg-[#D99B21]' : 'border-[#838921]'}`} />
@@ -617,35 +881,54 @@ function MapNio() {
                 </button>
               ))}
             </div>
-            <div className="mt-8 border-t border-[#D8D0B3] pt-6">
+            <div className="mt-6 border-t border-[#D8D0B3] pt-4">
               <div className="flex justify-between">
                 <span className="oe-label">Study bounds</span>
                 <span className="font-data text-xs text-[#133458]">{studyBounds}</span>
               </div>
-              <div className="mt-4 flex justify-between">
-                <span className="oe-label">Subregions</span>
-                <span className="font-data text-right text-xs text-[#133458]">Arabian Sea · Bay of Bengal</span>
+              <div className="mt-3 flex justify-between">
+                <span className="oe-label">Active Casts</span>
+                <span className="font-data text-right text-xs text-[#133458] font-bold">{runs.length} Reconstructions</span>
               </div>
-              <div className="mt-4 flex justify-between">
+              <div className="mt-3 flex justify-between">
                 <span className="oe-label">Test period</span>
                 <span className="font-data text-xs text-[#133458]">January 2023</span>
               </div>
             </div>
-            <div className="mt-7 bg-[#133458] p-4 text-[#FAF7BB]">
+            <div className="mt-6 bg-[#133458] p-4 text-[#FAF7BB] rounded-sm">
               <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#FAF7BB]/55">
-                <CircleHelp size={13} /> Selected subregion
+                <CircleHelp size={13} /> Selected Cast Details
               </div>
-              <div className="mt-3 font-display text-xl">{selected}</div>
-              <div className="mt-3 grid grid-cols-2 gap-y-3 font-data text-[10px]">
-                <span className="text-[#FAF7BB]/45">STUDY REGION</span>
-                <span className="text-right">{studyRegion}</span>
-                <span className="text-[#FAF7BB]/45">BOUNDS</span>
-                <span className="text-right">{studyBounds}</span>
-                <span className="text-[#FAF7BB]/45">PERIOD</span>
-                <span className="text-right text-[#D99B21]">January 2023</span>
+              <div className="mt-2 font-display text-xl text-[#D99B21] truncate">{activeRun.name}</div>
+              <div className="mt-3 space-y-2 font-data text-[10px]">
+                <div className="flex justify-between border-b border-[#FAF7BB]/10 pb-1.5">
+                  <span className="text-[#FAF7BB]/50">COORDINATES</span>
+                  <span>{activeRun.latitude}°N, {activeRun.longitude}°E</span>
+                </div>
+                <div className="flex justify-between border-b border-[#FAF7BB]/10 pb-1.5">
+                  <span className="text-[#FAF7BB]/50">DATE</span>
+                  <span>{activeRun.date}</span>
+                </div>
+                <div className="flex justify-between border-b border-[#FAF7BB]/10 pb-1.5">
+                  <span className="text-[#FAF7BB]/50">SURFACE SST</span>
+                  <span className="text-[#FAF7BB] font-bold">{activeRun.sst}°C</span>
+                </div>
+                <div className="flex justify-between border-b border-[#FAF7BB]/10 pb-1.5">
+                  <span className="text-[#FAF7BB]/50">SSHA / SALINITY</span>
+                  <span>{activeRun.ssha}m · {activeRun.sss}psu</span>
+                </div>
+                <div className="flex justify-between border-b border-[#FAF7BB]/10 pb-1.5">
+                  <span className="text-[#FAF7BB]/50">THERMOCLINE (Z20)</span>
+                  <span className="text-[#D99B21] font-bold">{activeRun.z20} m</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#FAF7BB]/50">EST. RMSE</span>
+                  <span className="text-[#838921] font-bold">{activeRun.rmse}°C</span>
+                </div>
               </div>
-              <Link href="/reconstructions" className="mt-4 flex items-center gap-1 text-xs text-[#D99B21]" data-testid="link-inspect-region">
-                Inspect region <ArrowRight size={13} />
+              <Link href="/reconstructions" className="mt-4 flex items-center justify-between text-xs text-[#D99B21] hover:underline pt-2 border-t border-[#FAF7BB]/15" data-testid="link-inspect-region">
+                <span>Inspect full profile</span>
+                <ArrowRight size={13} />
               </Link>
             </div>
           </aside>
@@ -655,20 +938,30 @@ function MapNio() {
   );
 }
 
-function ScientificProfileChart() {
-  const observedPath = 'M608 43 C600 47 594 53 585 59 S557 74 537 83 S495 96 462 108 S422 124 392 138 S353 160 332 183 S302 216 277 243 S242 278 217 307 S188 340 166 365 S145 379 133 383';
-  const predictedPath = 'M613 43 C606 47 597 53 587 60 S558 77 531 87 S492 102 457 113 S421 131 390 145 S352 166 330 187 S297 220 273 248 S240 283 214 312 S185 345 164 368 S143 381 132 384';
+function ScientificProfileChart({ run }: { run?: ReconstructionResult }) {
   const xTicks = [5, 10, 15, 20, 25];
   const yTicks = [0, 500, 1000, 1500, 2000];
   const xPosition = (temperature: number) => 70 + (temperature / 27) * 570;
   const yPosition = (depth: number) => 43 + (depth / 2100) * 340;
 
+  const observedPath = 'M608 43 C600 47 594 53 585 59 S557 74 537 83 S495 96 462 108 S422 124 392 138 S353 160 332 183 S302 216 277 243 S242 278 217 307 S188 340 166 365 S145 379 133 383';
+  
+  const predictedPath = run && run.depths.length > 0
+    ? run.depths.map((d, i) => {
+        const x = Math.min(640, Math.max(70, xPosition(run.temperatures[i])));
+        const y = Math.min(383, Math.max(43, yPosition(d)));
+        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
+      }).join(' ')
+    : 'M613 43 C606 47 597 53 587 60 S558 77 531 87 S492 102 457 113 S421 131 390 145 S352 166 330 187 S297 220 273 248 S240 283 214 312 S185 345 164 368 S143 381 132 384';
+
   return (
     <section className="oe-card overflow-hidden" data-testid="reconstruction-profile-chart">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#D8D0B3] bg-[#f1edc9]/60 px-5 py-4">
         <div>
-          <div className="oe-kicker mb-1">Scientific profile</div>
-          <h2 className="font-display text-2xl text-[#133458]">Predicted vs. Observed Temperature Profile</h2>
+          <div className="oe-kicker mb-1">{run ? `${run.name} · ${run.date}` : 'Scientific profile'}</div>
+          <h2 className="font-display text-2xl text-[#133458]">
+            {run ? `${run.name} Temperature Profile` : 'Predicted vs. Observed Temperature Profile'}
+          </h2>
         </div>
         <div className="flex flex-wrap items-center gap-4 text-[10px] text-[#536675]">
           <span className="flex items-center gap-2"><i className="h-0.5 w-5 bg-[#133458]" /> Actual (Argo measured)</span>
@@ -698,17 +991,40 @@ function ScientificProfileChart() {
           </g>
           <path d={observedPath} fill="none" stroke="#133458" strokeWidth="3.5" strokeLinecap="round" />
           <path d={predictedPath} fill="none" stroke="#D99B21" strokeWidth="2.75" strokeDasharray="7 5" strokeLinecap="round" />
+          {run && run.depths.map((d, idx) => {
+            const x = Math.min(640, Math.max(70, xPosition(run.temperatures[idx])));
+            const y = Math.min(383, Math.max(43, yPosition(d)));
+            return (
+              <circle
+                key={d}
+                cx={x}
+                cy={y}
+                r="3.5"
+                fill="#D99B21"
+                stroke="#133458"
+                strokeWidth="1.5"
+              />
+            );
+          })}
           <text x="355" y="431" textAnchor="middle" fill="#133458" fontFamily="Space Mono" fontSize="11">Temperature (°C)</text>
           <text x="18" y="215" textAnchor="middle" fill="#133458" fontFamily="Space Mono" fontSize="11" transform="rotate(-90 18 215)">Depth (m)</text>
         </svg>
+        {run && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#D8D0B3] pt-3 font-data text-[11px] text-[#536675]">
+            <span>Coordinates: <strong className="text-[#133458]">{run.latitude}°N, {run.longitude}°E</strong></span>
+            <span>Surface Temp: <strong className="text-[#133458]">{run.sst}°C</strong></span>
+            <span>SSHa: <strong className="text-[#133458]">{run.ssha}m</strong></span>
+            <span>Thermocline (Z20): <strong className="text-[#D99B21]">{run.z20}m</strong></span>
+            <span>Est. RMSE: <strong className="text-[#838921]">{run.rmse}°C</strong></span>
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
 function ReconstructionsScientific() {
-  const [active, setActive] = useState('Arabian Sea');
-  const runs = ['Arabian Sea', 'Bay of Bengal'];
+  const { runs, activeRun, setActiveRun, setDialogOpen } = useReconstructions();
 
   return (
     <AppShell>
@@ -717,52 +1033,72 @@ function ReconstructionsScientific() {
           eyebrow={`Inference studio · ${studyRegion}`}
           title="Reconstructions"
           description="Inspect predicted and observed temperature profiles from the North Indian Ocean study field."
-          action={
-            <button className="oe-control oe-primary flex items-center gap-2" data-testid="button-start-run">
-              <Play size={14} /> Run reconstruction
-            </button>
-          }
         />
         <div className="grid gap-5 xl:grid-cols-[230px_1fr]">
           <aside className="oe-card h-fit p-4">
             <div className="mb-3 flex items-center justify-between">
               <span className="oe-label">Study subregions</span>
-              <button className="text-[#838921]" aria-label="Add reconstruction" data-testid="button-add-reconstruction"><Plus size={16} /></button>
+              <button
+                onClick={() => setDialogOpen(true)}
+                className="text-[#838921] hover:text-[#133458] transition-colors p-1"
+                aria-label="Add reconstruction"
+                data-testid="button-add-reconstruction"
+              >
+                <Plus size={16} />
+              </button>
             </div>
             <div className="space-y-1">
               {runs.map((run, i) => (
                 <button
-                  onClick={() => setActive(run)}
-                  key={run}
-                  className={`w-full border-l-2 px-3 py-3 text-left ${active === run ? 'border-[#D99B21] bg-[#f1edc9]' : 'border-transparent hover:bg-[#f5f1d6]'}`}
+                  onClick={() => setActiveRun(run)}
+                  key={run.id}
+                  className={`w-full border-l-2 px-3 py-3 text-left transition-colors ${activeRun.id === run.id ? 'border-[#D99B21] bg-[#f1edc9]' : 'border-transparent hover:bg-[#f5f1d6]'}`}
                   data-testid={`button-run-${i}`}
                 >
-                  <div className="text-xs font-semibold text-[#133458]">{run}</div>
-                  <div className="mt-1 font-data text-[9px] text-[#8a927f]">{studyRegion}</div>
-                  <div className="mt-2 flex items-center gap-1 text-[9px] text-[#838921]"><Check size={10} /> Complete</div>
+                  <div className="text-xs font-semibold text-[#133458] truncate">{run.name}</div>
+                  <div className="mt-1 font-data text-[10px] font-semibold text-[#24384d] truncate">
+                    {run.latitude}°N, {run.longitude}°E
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-[10px]">
+                    <span className="flex items-center gap-1 text-[#556b2f] font-semibold"><Check size={11} /> Complete</span>
+                    <span className="font-data font-bold text-[#133458]">{run.sst}°C</span>
+                  </div>
                 </button>
               ))}
             </div>
-            <button className="mt-4 flex w-full items-center justify-center gap-2 border-t border-[#D8D0B3] pt-4 text-xs text-[#536675]" data-testid="button-load-more-runs">
-              Load archive <ChevronDown size={13} />
+            <button
+              onClick={() => setDialogOpen(true)}
+              className="mt-4 flex w-full items-center justify-center gap-2 border-t border-[#D8D0B3] pt-4 text-xs font-semibold text-[#838921] hover:underline"
+              data-testid="button-load-more-runs"
+            >
+              <Plus size={13} /> New reconstruction
             </button>
           </aside>
           <section>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="oe-kicker mb-1">Selected reconstruction</div>
-                <h2 className="font-display text-2xl text-[#133458]">{active}</h2>
+                <h2 className="font-display text-2xl text-[#133458]">{activeRun.name}</h2>
+                <div className="mt-1 font-data text-xs text-[#24384d] font-semibold">
+                  {activeRun.subregion} · {activeRun.latitude}°N, {activeRun.longitude}°E · Date: {activeRun.date}
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 bg-[#e5ebd3] px-3 py-2 text-[10px] text-[#536b35]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#838921]" /> COMPLETE
+                <span className="flex items-center gap-1.5 bg-[#e5ebd3] px-3 py-2 text-[10px] font-bold text-[#536b35]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#838921]" />
+                  COMPLETE
                 </span>
-                <button className="oe-control p-2" aria-label="More reconstruction actions" data-testid="button-reconstruction-more">
-                  <MoreHorizontal size={16} />
+                <button
+                  onClick={() => setDialogOpen(true)}
+                  className="oe-control flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#133458]"
+                  data-testid="button-reconstruction-more"
+                  title="Configure new cast with custom location, date & depths"
+                >
+                  <Plus size={13} /> Configure New
                 </button>
               </div>
             </div>
-            <ScientificProfileChart />
+            <ScientificProfileChart run={activeRun} />
           </section>
         </div>
       </div>
@@ -771,6 +1107,7 @@ function ReconstructionsScientific() {
 }
 
 function Temperature() {
+  const { runs, activeRun, setActiveRun, setDialogOpen } = useReconstructions();
   const [metric, setMetric] = useState('Temperature');
   const [period, setPeriod] = useState('January 2023');
 
@@ -787,61 +1124,92 @@ function Temperature() {
             </button>
           }
         />
-        <div className="mb-5 flex flex-wrap gap-2">
+        <div className="mb-5 flex flex-wrap items-center gap-2">
           {['Temperature', 'Anomaly', 'RMSE'].map((m) => (
             <button key={m} onClick={() => setMetric(m)} className={`oe-control ${metric === m ? 'oe-primary' : ''}`} data-testid={`button-temperature-metric-${m.toLowerCase()}`}>
               {m}
             </button>
           ))}
+          <div className="flex items-center gap-1.5 sm:ml-2 sm:border-l sm:border-[#D8D0B3] sm:pl-3">
+            <span className="text-[10px] uppercase font-data text-[#536675]">Cast:</span>
+            <select
+              value={activeRun.id}
+              onChange={(e) => {
+                const found = runs.find((r) => r.id === e.target.value);
+                if (found) setActiveRun(found);
+              }}
+              className="oe-control text-xs py-1"
+            >
+              {runs.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name} ({r.sst}°C)
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="ml-auto flex gap-2">
+            <button
+              onClick={() => setDialogOpen(true)}
+              className="oe-control oe-primary flex items-center gap-1.5 text-xs"
+            >
+              <Plus size={14} /> New reconstruction
+            </button>
             <button className="oe-control flex items-center gap-2" data-testid="button-period">
               <RotateCcw size={14} /> {period}
-            </button>
-            <button onClick={() => setPeriod('January 2023')} className="oe-control p-2" aria-label="Keep study period" data-testid="button-change-period">
-              <ChevronDown size={15} />
             </button>
           </div>
         </div>
         <section className="oe-card p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <div className="oe-kicker mb-1">{studyRegion} · {metric}</div>
-              <h2 className="font-display text-2xl text-[#133458]">Surface and subsurface temperature</h2>
+              <div className="oe-kicker mb-1">{studyRegion} · {metric} · {activeRun.name}</div>
+              <h2 className="font-display text-2xl text-[#133458]">Surface and subsurface thermal field</h2>
             </div>
             <div className="flex gap-5 text-[10px] text-[#536675]">
-              <span className="flex items-center gap-2"><i className="h-2 w-5 bg-[#133458]" /> Observed</span>
-              <span className="flex items-center gap-2"><i className="h-2 w-5 bg-[#D99B21]" /> Predicted</span>
+              <span className="flex items-center gap-2"><i className="h-2 w-5 bg-[#133458]" /> Observed baseline</span>
+              <span className="flex items-center gap-2"><i className="h-2 w-5 bg-[#D99B21]" /> Reconstructed profile</span>
             </div>
           </div>
           <div className="mt-6 h-[300px]"><Chart variant={metric === 'RMSE' ? 'bars' : 'line'} /></div>
         </section>
         <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1fr]">
           <section className="oe-card p-5">
-            <div className="oe-kicker mb-1">Depth profile</div>
-            <h2 className="font-display text-2xl text-[#133458]">North Indian Ocean RMSE by depth</h2>
-            <div className="mt-5 space-y-3">
-              {depthValues.map((row) => (
-                <div key={row.depth} className="grid grid-cols-[105px_1fr_55px] items-center gap-3 text-xs">
-                  <span className="font-data text-[10px] text-[#536675]">{row.depth}</span>
-                  <div className="h-2 bg-[#e8e2ba]">
-                    <div className="h-full bg-[#838921]" style={{ width: `${(Number(row.rmse) / 0.9) * 100}%` }} />
+            <div className="oe-kicker mb-1">Active Cast: {activeRun.name}</div>
+            <h2 className="font-display text-2xl text-[#133458]">Temperatures across depths</h2>
+            <div className="mt-5 space-y-2.5 max-h-[350px] overflow-y-auto pr-2">
+              {activeRun.depths.map((d, idx) => (
+                <div key={d} className="grid grid-cols-[85px_1fr_60px] items-center gap-3 text-xs">
+                  <span className="font-data text-[10px] text-[#536675]">{d} m</span>
+                  <div className="h-2 bg-[#e8e2ba] rounded-xs overflow-hidden">
+                    <div
+                      className="h-full bg-[#838921]"
+                      style={{ width: `${Math.min(100, Math.max(8, (activeRun.temperatures[idx] / 30) * 100))}%` }}
+                    />
                   </div>
-                  <span className="font-data text-right text-[#133458]">{row.rmse}°</span>
+                  <span className="font-data text-right font-bold text-[#133458]">{activeRun.temperatures[idx]}°C</span>
                 </div>
               ))}
             </div>
           </section>
           <section className="oe-card p-5">
-            <div className="oe-kicker mb-1">Study summary</div>
-            <h2 className="font-display text-2xl text-[#133458]">North Indian Ocean</h2>
+            <div className="oe-kicker mb-1">Profile overview</div>
+            <h2 className="font-display text-2xl text-[#133458]">{activeRun.name}</h2>
             <div className="mt-5 divide-y divide-[#D8D0B3]">
-              {[['Study region', studyBounds, 'Arabian Sea and Bay of Bengal'], ['Test period', 'January 2023', '1 month'], ['Overall Test RMSE', '0.554°C', 'North Indian Ocean test set']].map(([a,b,c]) => (
-                <div key={a} className="flex items-center justify-between gap-4 py-3">
+              {[
+                ['Coordinates', `${activeRun.latitude}°N, ${activeRun.longitude}°E`, 'Observation coordinates'],
+                ['Observation date', activeRun.date, 'Cast date'],
+                ['Surface SST', `${activeRun.sst}°C`, 'NOAA OISST surface input'],
+                ['Sea surface height', `${activeRun.ssha} m`, 'Copernicus SSHa input'],
+                ['Salinity', `${activeRun.sss} psu`, 'Copernicus SSS input'],
+                ['Thermocline depth (Z20)', `${activeRun.z20} m`, 'Estimated 20°C isotherm'],
+                ['Profile Test RMSE', `${activeRun.rmse}°C`, 'Held-out float benchmark']
+              ].map(([a,b,c]) => (
+                <div key={a} className="flex items-center justify-between gap-4 py-2.5">
                   <div>
                     <div className="text-xs font-semibold text-[#133458]">{a}</div>
-                    <div className="mt-1 text-[11px] text-[#536675]">{c}</div>
+                    <div className="mt-0.5 text-[10px] text-[#536675]">{c}</div>
                   </div>
-                  <div className="font-data text-right text-sm text-[#D99B21]">{b}</div>
+                  <div className="font-data text-right text-xs text-[#D99B21] font-semibold">{b}</div>
                 </div>
               ))}
             </div>
@@ -854,6 +1222,14 @@ function Temperature() {
 
 function Performance() {
   const [tab, setTab] = useState('By depth');
+  const { runs, setDialogOpen, setActiveRun } = useReconstructions();
+  const [, setLocation] = useLocation();
+
+  const avgRmse = useMemo(() => {
+    if (!runs.length) return '0.554';
+    const sum = runs.reduce((acc, r) => acc + (typeof r.rmse === 'number' ? r.rmse : parseFloat(String(r.rmse)) || 0.55), 0);
+    return (sum / runs.length).toFixed(3);
+  }, [runs]);
 
   return (
     <AppShell>
@@ -863,16 +1239,79 @@ function Performance() {
           title="Performance"
           description="Measure the Convolutional Encoder + MLP (Fully Connected) Decoder on the North Indian Ocean test set."
           action={
-            <Link href="/performance/architecture" className="oe-control flex items-center gap-2" data-testid="link-model-architecture">
-              <Network size={15} /> Model architecture
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setDialogOpen(true)}
+                className="oe-control oe-primary flex items-center gap-1.5"
+                data-testid="performance-new-reconstruction"
+              >
+                <Plus size={15} /> New reconstruction
+              </button>
+              <Link href="/performance/architecture" className="oe-control flex items-center gap-2" data-testid="link-model-architecture">
+                <Network size={15} /> Model architecture
+              </Link>
+            </div>
           }
         />
         <div className="grid gap-4 sm:grid-cols-3">
-          <StatCard label="Overall Test RMSE" value="0.554°C" note="North Indian Ocean test set" icon={Activity} accent />
-          <StatCard label="Total Floats" value="228" note="183 train · 45 test" icon={Layers3} />
-          <StatCard label="Measurements" value="141,433" note="January 2023" icon={Database} />
+          <StatCard label="Overall Test RMSE" value={`${avgRmse}°C`} note={`${runs.length} reconstructions evaluated`} icon={Activity} accent />
+          <StatCard label="Active Reconstructions" value={String(runs.length)} note="User & calibrated casts" icon={Layers3} />
+          <StatCard label="Measurements" value="141,433" note="January 2023 · NIO test set" icon={Database} />
         </div>
+
+        <section className="oe-card mt-5 p-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <div className="oe-kicker mb-1">Inference Benchmarks</div>
+              <h2 className="font-display text-2xl text-[#133458]">Active Reconstruction Profiles</h2>
+            </div>
+            <span className="font-data text-[10px] font-bold text-[#133458] uppercase">{runs.length} PROFILES IN MEMORY</span>
+          </div>
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full min-w-[620px] text-left">
+              <thead>
+                <tr className="border-b border-[#D8D0B3] font-data text-[10px] font-bold uppercase tracking-wider text-[#133458]">
+                  <th className="pb-3">Profile Name</th>
+                  <th className="pb-3">Coordinates</th>
+                  <th className="pb-3">Observation Date</th>
+                  <th className="pb-3">Depths</th>
+                  <th className="pb-3">SST</th>
+                  <th className="pb-3">z20</th>
+                  <th className="pb-3">RMSE</th>
+                  <th className="pb-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {runs.map((r) => (
+                  <tr key={r.id} className="border-b border-[#D8D0B3]/60 text-xs hover:bg-[#FAF7BB]/40 transition-colors">
+                    <td className="py-3 font-semibold text-[#133458]">
+                      <div>{r.name}</div>
+                      <div className="font-mono text-[9px] font-semibold text-[#24384d]">{r.subregion}</div>
+                    </td>
+                    <td className="py-3 font-mono text-[#24384d] font-medium">{r.latitude.toFixed(2)}°N, {r.longitude.toFixed(2)}°E</td>
+                    <td className="py-3 font-data text-[#24384d] font-medium">{r.date}</td>
+                    <td className="py-3 font-data text-[#133458] font-semibold">{r.depths.length} levels</td>
+                    <td className="py-3 font-data text-[#133458] font-semibold">{r.sst.toFixed(1)}°C</td>
+                    <td className="py-3 font-data text-[#838921] font-bold">{r.z20}m</td>
+                    <td className="py-3 font-data text-[#133458] font-bold">±{r.rmse}°C</td>
+                    <td className="py-3 text-right">
+                      <button
+                        onClick={() => {
+                          setActiveRun(r);
+                          setLocation('/reconstructions');
+                        }}
+                        className="text-[11px] font-bold text-[#838921] hover:underline"
+                      >
+                        Inspect profile →
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <section className="oe-card mt-5 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -884,7 +1323,7 @@ function Performance() {
                 <button
                   onClick={() => setTab(x)}
                   key={x}
-                  className={`px-3 py-2 text-[11px] ${tab === x ? 'bg-[#133458] text-[#FAF7BB]' : 'text-[#536675]'}`}
+                  className={`px-3 py-2 text-[11px] font-bold ${tab === x ? 'bg-[#133458] text-[#FAF7BB]' : 'text-[#24384d]'}`}
                   data-testid={`button-performance-tab-${x.toLowerCase().replace(' ', '-')}`}
                 >
                   {x}
@@ -895,7 +1334,7 @@ function Performance() {
           <div className="mt-6 overflow-x-auto">
             <table className="w-full min-w-[590px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-[#D8D0B3] font-data text-[9px] uppercase tracking-wider text-[#8a927f]">
+                <tr className="border-b border-[#D8D0B3] font-data text-[10px] font-bold uppercase tracking-wider text-[#133458]">
                   <th className="pb-3">Depth band</th>
                   <th className="pb-3"># Measurements</th>
                   <th className="pb-3">RMSE (°C)</th>
@@ -905,8 +1344,8 @@ function Performance() {
                 {depthValues.map((row) => (
                   <tr key={row.depth} className="border-b border-[#D8D0B3]/60 text-xs">
                     <td className="py-4 font-semibold text-[#133458]">{tab === 'By depth' ? row.depth : studyRegion}</td>
-                    <td className="py-4 font-data text-[#536675]">{row.measurements}</td>
-                    <td className="py-4 font-data text-[#133458]">{row.rmse}</td>
+                    <td className="py-4 font-data text-[#24384d] font-semibold">{row.measurements}</td>
+                    <td className="py-4 font-data text-[#133458] font-bold">{row.rmse}</td>
                   </tr>
                 ))}
               </tbody>
@@ -918,12 +1357,12 @@ function Performance() {
           <div className="oe-kicker mb-1">Test set summary</div>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <h2 className="font-display text-2xl text-[#133458]">North Indian Ocean validation</h2>
-            <span className="font-data text-[9px] text-[#8a927f]">JANUARY 2023 · 1 MONTH</span>
+            <span className="font-data text-[10px] font-bold text-[#133458]">JANUARY 2023 · 1 MONTH</span>
           </div>
           <div className="mt-5 overflow-x-auto">
             <table className="w-full min-w-[530px] text-left">
               <thead>
-                <tr className="border-b border-[#D8D0B3] font-data text-[9px] uppercase tracking-wider text-[#8a927f]">
+                <tr className="border-b border-[#D8D0B3] font-data text-[10px] font-bold uppercase tracking-wider text-[#133458]">
                   <th className="pb-3">Metric</th>
                   <th className="pb-3">Value</th>
                   <th className="pb-3">Scope</th>
@@ -931,15 +1370,16 @@ function Performance() {
               </thead>
               <tbody>
                 {[
-                  ['Overall Test RMSE', '0.554°C', studyRegion],
+                  ['Overall Test RMSE', `${avgRmse}°C`, studyRegion],
                   ['Total Floats', '228', '183 train / 45 test'],
                   ['Total Measurements', '141,433', studyBounds],
+                  ['Active Reconstruction Profiles', `${runs.length} profiles`, 'Dynamic memory store'],
                   ['Model', 'CNN + MLP', 'Convolutional Encoder + MLP Decoder']
                 ].map(([a,b,c]) => (
                   <tr key={a} className="border-b border-[#D8D0B3]/60 text-xs">
                     <td className="py-4 font-semibold text-[#133458]">{a}</td>
-                    <td className="py-4 font-data">{b}</td>
-                    <td className="py-4 font-data text-[#536675]">{c}</td>
+                    <td className="py-4 font-data font-bold text-[#133458]">{b}</td>
+                    <td className="py-4 font-data text-[#24384d] font-semibold">{c}</td>
                   </tr>
                 ))}
               </tbody>
@@ -953,13 +1393,17 @@ function Performance() {
 
 function Dataset() {
   const [query, setQuery] = useState('');
+  const { runs, setDialogOpen, setActiveRun } = useReconstructions();
+  const [, setLocation] = useLocation();
+
   const sources = useMemo(() => [
     ['NOAA OISST', 'Sea Surface Temperature', 'January 2023', 'Input feature', studyRegion],
     ['Copernicus SSHA', 'Sea Surface Height Anomaly', 'January 2023', 'Input feature', studyRegion],
     ['Copernicus SSS', 'Sea Surface Salinity', 'January 2023', 'Input feature', studyRegion],
     ['Copernicus Surface currents', 'Surface currents', 'January 2023', 'Input feature', studyRegion],
-    ['Argovis / Argo', 'Subsurface Temperature Profiles', 'January 2023', 'Target profiles', studyRegion]
-  ].filter((s) => s.join(' ').toLowerCase().includes(query.toLowerCase())), [query]);
+    ['Argovis / Argo', 'Subsurface Temperature Profiles', 'January 2023', 'Target profiles', studyRegion],
+    ['OceanEmbed Reconstructions', `${runs.length} User & Calibrated Casts`, 'Jan 2023 / Real-time', 'Inferred profiles', studyRegion]
+  ].filter((s) => s.join(' ').toLowerCase().includes(query.toLowerCase())), [query, runs]);
 
   return (
     <AppShell>
@@ -967,34 +1411,43 @@ function Dataset() {
         <SectionHeading
           eyebrow={`Source registry · ${studyRegion}`}
           title="Dataset"
-          description="The five data sources used for the North Indian Ocean study and its subsurface temperature profiles."
+          description="The data sources used for the North Indian Ocean study and its subsurface temperature profiles."
           action={
-            <button className="oe-control oe-primary flex items-center gap-2" data-testid="button-add-source">
-              <Plus size={15} /> Add source
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setDialogOpen(true)}
+                className="oe-control oe-primary flex items-center gap-2"
+                data-testid="button-new-reconstruction-dataset"
+              >
+                <Plus size={15} /> New reconstruction
+              </button>
+              <button className="oe-control flex items-center gap-2" data-testid="button-add-source">
+                <Plus size={15} /> Add source
+              </button>
+            </div>
           }
         />
         <div className="grid gap-5 lg:grid-cols-[1fr_285px]">
           <section className="oe-card p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="relative">
-                <Search size={15} className="absolute left-3 top-2.5 text-[#8a927f]" />
+                <Search size={15} className="absolute left-3 top-2.5 text-[#133458]" />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search sources"
-                  className="h-9 w-64 border border-[#D8D0B3] bg-[#FAF7BB] pl-9 pr-3 text-xs outline-none focus:border-[#838921]"
+                  className="h-9 w-64 border border-[#D8D0B3] bg-[#FAF7BB] pl-9 pr-3 text-xs text-[#133458] font-semibold outline-none focus:border-[#838921]"
                   data-testid="input-search-dataset"
                 />
               </div>
-              <button className="oe-control flex items-center gap-2" data-testid="button-filter-dataset">
+              <button className="oe-control flex items-center gap-2 font-semibold" data-testid="button-filter-dataset">
                 <SlidersHorizontal size={14} /> Filters
               </button>
             </div>
             <div className="mt-5 overflow-x-auto">
               <table className="w-full min-w-[650px] text-left">
                 <thead>
-                  <tr className="border-b border-[#D8D0B3] font-data text-[9px] uppercase tracking-wider text-[#8a927f]">
+                  <tr className="border-b border-[#D8D0B3] font-data text-[10px] font-bold uppercase tracking-wider text-[#133458]">
                     <th className="pb-3">Source</th>
                     <th className="pb-3">Coverage</th>
                     <th className="pb-3">Period</th>
@@ -1007,11 +1460,11 @@ function Dataset() {
                     <tr key={s[0]} className="border-b border-[#D8D0B3]/60 text-xs">
                       <td className="py-4">
                         <div className="font-semibold text-[#133458]">{s[0]}</div>
-                        <div className="mt-1 text-[10px] text-[#536675]">{s[1]}</div>
+                        <div className="mt-1 text-[10px] text-[#24384d] font-medium">{s[1]}</div>
                       </td>
-                      <td className="py-4 text-[#536675]">{s[4]}</td>
-                      <td className="py-4 font-data text-[10px]">{s[2]}</td>
-                      <td className="py-4 font-data text-[10px]">{s[3]}</td>
+                      <td className="py-4 text-[#24384d] font-semibold">{s[4]}</td>
+                      <td className="py-4 font-data text-[10px] text-[#133458] font-bold">{s[2]}</td>
+                      <td className="py-4 font-data text-[10px] text-[#24384d] font-semibold">{s[3]}</td>
                       <td className="py-4">
                         <span className="flex items-center gap-1.5 text-[#536b35]">
                           <span className="h-1.5 w-1.5 rounded-full bg-[#838921]" /> Included
@@ -1023,13 +1476,50 @@ function Dataset() {
               </table>
               {sources.length === 0 && <div className="py-14 text-center text-sm text-[#536675]">No sources match “{query}”.</div>}
             </div>
+
+            <div className="mt-8 border-t border-[#D8D0B3] pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="oe-kicker mb-1">Local Registry Profiles</div>
+                  <h3 className="font-display text-lg text-[#133458]">Active Reconstructed Profiles</h3>
+                </div>
+                <button
+                  onClick={() => setDialogOpen(true)}
+                  className="text-xs font-semibold text-[#838921] hover:underline flex items-center gap-1"
+                >
+                  <Plus size={13} /> Add reconstruction
+                </button>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {runs.map((r) => (
+                  <div
+                    key={r.id}
+                    onClick={() => {
+                      setActiveRun(r);
+                      setLocation('/reconstructions');
+                    }}
+                    className="border border-[#D8D0B3] bg-[#FAF7BB]/50 p-3 hover:border-[#838921] cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-xs text-[#133458]">{r.name}</span>
+                      <span className="font-mono text-[9px] text-[#838921] font-bold">±{r.rmse}°C</span>
+                    </div>
+                    <div className="mt-1 font-mono text-[10px] text-[#24384d] font-medium">{r.latitude.toFixed(2)}°N, {r.longitude.toFixed(2)}°E · {r.date}</div>
+                    <div className="mt-2 flex items-center justify-between text-[10px] text-[#24384d] font-semibold">
+                      <span>{r.depths.length} levels ({r.depths[0]}m-{r.depths[r.depths.length - 1]}m)</span>
+                      <span className="text-[#838921] font-bold">View →</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </section>
           <aside className="space-y-5">
-            <div className="oe-card bg-[#133458] p-5 text-[#FAF7BB]">
+            <div className="rounded-sm border border-[#294966] bg-[#133458] p-5 text-[#FAF7BB]">
               <div className="oe-kicker !text-[#D99B21]">Study region</div>
-              <div className="mt-4 font-data text-2xl">North Indian Ocean</div>
-              <p className="mt-2 text-xs leading-5 text-[#FAF7BB]/60">{studyBounds}. Subregions: Arabian Sea and Bay of Bengal.</p>
-              <div className="mt-5 h-1 bg-[#FAF7BB]/15"><div className="h-full w-full bg-[#D99B21]" /></div>
+              <div className="mt-4 font-data text-2xl font-bold text-white">North Indian Ocean</div>
+              <p className="mt-2 text-xs leading-5 text-white/85 font-medium">{studyBounds}. Subregions: Arabian Sea and Bay of Bengal.</p>
+              <div className="mt-5 h-1 bg-[#FAF7BB]/25"><div className="h-full w-full bg-[#D99B21]" /></div>
             </div>
             <div className="oe-card p-5">
               <div className="oe-kicker mb-1">Dataset summary</div>
@@ -1037,8 +1527,8 @@ function Dataset() {
               <div className="mt-5 flex items-center gap-3">
                 <Cloud size={20} className="text-[#838921]" />
                 <div>
-                  <div className="font-data text-sm text-[#133458]">1 month</div>
-                  <div className="mt-1 text-[11px] text-[#536675]">228 floats · 141,433 measurements</div>
+                  <div className="font-data text-sm font-bold text-[#133458]">1 month · {runs.length} Profiles</div>
+                  <div className="mt-1 text-[11px] font-semibold text-[#24384d]">228 floats · 141,433 measurements · {runs.length} active reconstructions</div>
                 </div>
               </div>
               <button className="mt-5 flex items-center gap-2 text-xs font-semibold text-[#838921]" data-testid="button-refresh-dataset">
@@ -1125,7 +1615,12 @@ function Architecture() {
 }
 
 function SettingsNio() {
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark') || localStorage.getItem('oe_theme') === 'dark';
+    }
+    return false;
+  });
   const [saved, setSaved] = useState(false);
   const [activeSection, setActiveSection] = useState('Appearance');
   const [toggles, setToggles] = useState({ grid: true, notifications: true, animation: true, telemetry: false });
@@ -1135,6 +1630,18 @@ function SettingsNio() {
       <span className={`absolute top-1 h-3 w-3 rounded-full bg-[#FAF7BB] transition-transform ${value ? 'left-5' : 'left-1'}`} />
     </button>
   );
+
+  const handleDarkToggle = () => {
+    const next = !dark;
+    setDark(next);
+    if (next) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('oe_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('oe_theme', 'light');
+    }
+  };
 
   return (
     <AppShell>
@@ -1172,7 +1679,7 @@ function SettingsNio() {
                     <div className="text-sm font-semibold text-[#133458]">Dark field mode</div>
                     <div className="mt-1 text-xs text-[#536675]">Use a low-light palette for overnight analysis sessions.</div>
                   </div>
-                  <Toggle name="grid" value={dark} onChange={() => { setDark(!dark); document.documentElement.classList.toggle('dark', !dark); }} />
+                  <Toggle name="grid" value={dark} onChange={handleDarkToggle} />
                 </div>
                 <div className="flex items-center justify-between gap-4 py-4">
                   <div>
@@ -1435,13 +1942,24 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    const saved = localStorage.getItem('oe_theme');
+    if (saved === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else if (saved === 'light') {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
   return (
     <WouterRouter base={basePath}>
       <SupabaseAuthProvider>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
-            <Router />
-            <Toaster />
+            <ReconstructionsProvider>
+              <Router />
+              <Toaster />
+            </ReconstructionsProvider>
           </TooltipProvider>
         </QueryClientProvider>
       </SupabaseAuthProvider>

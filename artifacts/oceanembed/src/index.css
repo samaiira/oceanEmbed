@@ -29,17 +29,17 @@
 :root {
   --background: 51 77% 95%;
   --foreground: 211 47% 16%;
-  --border: 42 26% 80%;
-  --input: 42 26% 80%;
+  --border: 42 26% 75%;
+  --input: 42 26% 75%;
   --ring: 42 74% 49%;
   --card: 47 69% 97%;
   --card-foreground: 211 47% 16%;
   --primary: 211 47% 24%;
   --primary-foreground: 51 77% 95%;
-  --secondary: 74 33% 33%;
+  --secondary: 211 47% 22%;
   --secondary-foreground: 51 77% 95%;
   --muted: 45 34% 88%;
-  --muted-foreground: 210 19% 42%;
+  --muted-foreground: 211 35% 26%;
   --accent: 42 74% 49%;
   --accent-foreground: 211 47% 16%;
   --destructive: 6 62% 45%;
@@ -97,21 +97,372 @@
 .animate-scan { animation: scan 2.8s ease-in-out infinite; }
 .stagger-1 { animation-delay: .08s; } .stagger-2 { animation-delay: .16s; } .stagger-3 { animation-delay: .24s; }
 
-.oe-shell { min-height: 100dvh; background: hsl(var(--background)); }
-.oe-grid { background-image: linear-gradient(to right, hsl(211 30% 30% / .055) 1px, transparent 1px), linear-gradient(to bottom, hsl(211 30% 30% / .055) 1px, transparent 1px); background-size: 34px 34px; }
-.oe-kicker { color: hsl(var(--secondary)); font-size: 10px; font-weight: 700; letter-spacing: .19em; text-transform: uppercase; }
-.oe-card { border: 1px solid hsl(var(--border)); background: hsl(var(--card)); box-shadow: 0 10px 28px hsl(211 40% 16% / .05); }
-.oe-card:hover { border-color: hsl(var(--accent) / .62); }
-.oe-label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: hsl(var(--muted-foreground)); }
-.oe-control { height: 36px; border: 1px solid hsl(var(--border)); background: hsl(var(--card)); color: hsl(var(--foreground)); padding: 0 12px; border-radius: 2px; cursor: pointer; transition: background .2s, border-color .2s, color .2s; }
-.oe-control:hover { border-color: hsl(var(--accent)); background: hsl(var(--muted)); }
-.oe-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border: 1px solid hsl(var(--primary)); }
-.oe-primary:hover { background: hsl(var(--secondary)); border-color: hsl(var(--secondary)); }
-.oe-page { padding: 31px clamp(18px, 4vw, 56px) 56px; max-width: 1680px; margin: 0 auto; }
-.oe-data-line { stroke: hsl(var(--secondary)); stroke-width: 2; fill: none; }
-.oe-data-line-amber { stroke: hsl(var(--accent)); stroke-width: 2.5; fill: none; }
-/* Keep reconstruction axis labels inside the clipped chart card. */
-.oe-card [class~="bottom-[-25px]"] { bottom: 8px !important; }
+@layer components {
+  .oe-shell { min-height: 100dvh; background: hsl(var(--background)); }
+  .oe-grid { background-image: linear-gradient(to right, hsl(211 30% 30% / .055) 1px, transparent 1px), linear-gradient(to bottom, hsl(211 30% 30% / .055) 1px, transparent 1px); background-size: 34px 34px; }
+  .oe-kicker { color: #133458; font-size: 10px; font-weight: 800; letter-spacing: .19em; text-transform: uppercase; }
+  .oe-card { border: 1px solid hsl(var(--border)); background: hsl(var(--card)); box-shadow: 0 10px 28px hsl(211 40% 16% / .05); }
+  .oe-card:hover { border-color: hsl(var(--accent) / .62); }
+  .oe-label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #133458; font-weight: 700; }
+  .oe-control { height: 36px; border: 1px solid hsl(var(--border)); background: hsl(var(--card)); color: hsl(var(--foreground)); padding: 0 12px; border-radius: 2px; cursor: pointer; transition: background .2s, border-color .2s, color .2s; font-weight: 600; }
+  .oe-control:hover { border-color: hsl(var(--accent)); background: hsl(var(--muted)); }
+  .oe-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border: 1px solid hsl(var(--primary)); font-weight: 600; }
+  .oe-primary:hover { background: #133458; border-color: #133458; }
+  .oe-page { padding: 31px clamp(18px, 4vw, 56px) 56px; max-width: 1680px; margin: 0 auto; }
+  .oe-data-line { stroke: hsl(var(--secondary)); stroke-width: 2; fill: none; }
+  .oe-data-line-amber { stroke: hsl(var(--accent)); stroke-width: 2.5; fill: none; }
+  /* Keep reconstruction axis labels inside the clipped chart card. */
+  .oe-card [class~="bottom-[-25px]"] { bottom: 8px !important; }
+}
+
+/* =========================================================================
+   DARK FIELD MODE HIGH-CONTRAST PALETTE & TYPOGRAPHY OVERRIDES
+   ========================================================================= */
+
+.dark {
+  --background: 211 47% 10%;
+  --foreground: 51 77% 95%;
+  --border: 211 31% 25%;
+  --input: 211 31% 25%;
+  --card: 211 42% 14%;
+  --card-foreground: 51 77% 95%;
+  --primary: 42 74% 49%;
+  --primary-foreground: 211 47% 10%;
+  --secondary: 74 33% 47%;
+  --secondary-foreground: 211 47% 10%;
+  --muted: 211 32% 21%;
+  --muted-foreground: 211 15% 69%;
+  --accent: 42 74% 49%;
+  --accent-foreground: 211 47% 10%;
+  --destructive: 6 62% 55%;
+  --destructive-foreground: 51 77% 95%;
+  --sidebar: 211 49% 8%;
+  --sidebar-foreground: 51 77% 95%;
+  --sidebar-border: 211 31% 21%;
+}
+
+/* Shell & Canvas in Dark Mode */
+.dark .oe-shell {
+  background-color: #0b1724;
+  color: #FAF7BB;
+}
+
+/* High-contrast Typography for Dark Mode */
+.dark .text-\[\#133458\] {
+  color: #FAF7BB !important;
+}
+
+.dark .text-\[\#24384d\] {
+  color: #E2E8F0 !important;
+}
+
+.dark .text-\[\#536675\] {
+  color: #94A3B8 !important;
+}
+
+/* Luminous accents & metric status */
+.dark .text-\[\#838921\] {
+  color: #CBDD47 !important;
+}
+
+.dark .text-\[\#536b35\],
+.dark .text-\[\#556b2f\] {
+  color: #86EFAC !important;
+}
+
+.dark .oe-kicker {
+  color: #E5A93C !important;
+  font-weight: 700 !important;
+  letter-spacing: .18em !important;
+}
+
+.dark .oe-label {
+  color: #CBD5E1 !important;
+  font-weight: 700 !important;
+}
+
+/* Header & Top Bar */
+.dark header {
+  background-color: rgba(11, 23, 36, 0.88) !important;
+  border-color: #1e3650 !important;
+}
+
+.dark header .text-\[\#133458\] {
+  color: #FAF7BB !important;
+}
+
+.dark header .text-\[\#536675\] {
+  color: #94A3B8 !important;
+}
+
+/* Settings Nav Tabs */
+.dark nav button.bg-\[\#133458\] {
+  background-color: #D99B21 !important;
+  color: #0b1724 !important;
+  font-weight: 700 !important;
+}
+
+.dark nav button.text-\[\#536675\] {
+  color: #94A3B8 !important;
+}
+
+.dark nav button.text-\[\#536675\]:hover {
+  background-color: #1a3552 !important;
+  color: #FAF7BB !important;
+}
+
+/* Performance tab bar */
+.dark .bg-\[\#f1edc9\] {
+  background-color: #14273c !important;
+}
+
+.dark .bg-\[\#f1edc9\] button.bg-\[\#133458\] {
+  background-color: #D99B21 !important;
+  color: #0b1724 !important;
+  font-weight: 700 !important;
+}
+
+.dark .bg-\[\#f1edc9\] button.text-\[\#24384d\] {
+  color: #94A3B8 !important;
+}
+
+/* Cards & Containers */
+.dark .oe-card {
+  background-color: #112338 !important;
+  border-color: #203b5a !important;
+  color: #FAF7BB !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+}
+
+.dark .oe-card:hover {
+  border-color: #D99B21 !important;
+}
+
+/* Form Controls & Inputs */
+.dark .oe-control {
+  background-color: #0e1d2e !important;
+  color: #FAF7BB !important;
+  border-color: #264668 !important;
+}
+
+.dark .oe-control:hover,
+.dark .oe-control:focus {
+  background-color: #162c45 !important;
+  border-color: #D99B21 !important;
+  color: #FAF7BB !important;
+}
+
+.dark input.bg-\[\#FAF7BB\],
+.dark select.bg-\[\#FAF7BB\],
+.dark textarea.bg-\[\#FAF7BB\] {
+  background-color: #0e1d2e !important;
+  color: #FAF7BB !important;
+  border-color: #264668 !important;
+}
+
+.dark input.bg-\[\#FAF7BB\]:focus,
+.dark select.bg-\[\#FAF7BB\]:focus {
+  border-color: #D99B21 !important;
+}
+
+/* Primary Action Buttons */
+.dark .oe-primary {
+  background-color: #D99B21 !important;
+  color: #0b1724 !important;
+  border-color: #D99B21 !important;
+  font-weight: 700 !important;
+}
+
+.dark .oe-primary:hover {
+  background-color: #ebb23b !important;
+  border-color: #ebb23b !important;
+  color: #0b1724 !important;
+}
+
+/* Borders and Dividers */
+.dark .border-\[\#D8D0B3\] {
+  border-color: #203b5a !important;
+}
+
+.dark .border-\[\#D8D0B3\]\/60 {
+  border-color: #203b5a !important;
+}
+
+.dark .divide-\[\#D8D0B3\] > :not([hidden]) ~ :not([hidden]),
+.dark .divide-\[\#D8D0B3\] > * + * {
+  border-color: #203b5a !important;
+}
+
+/* Hover States & Highlights */
+.dark .hover\:bg-\[\#f1edc9\]:hover,
+.dark .hover\:bg-\[\#f5f1d6\]:hover,
+.dark .hover\:bg-\[\#e8e2ba\]:hover {
+  background-color: #162d46 !important;
+}
+
+.dark .hover\:bg-\[\#FAF7BB\]\/40:hover,
+.dark .hover\:bg-\[\#FAF7BB\]\/10:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Light Background Tints inside Dark Cards */
+.dark .bg-\[\#FAF7BB\]\/50,
+.dark .bg-\[\#FAF7BB\]\/40,
+.dark .bg-\[\#FAF7BB\]\/30 {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border-color: #203b5a !important;
+}
+
+.dark .bg-\[\#fffdf0\] {
+  background-color: #14273c !important;
+  border-color: #203b5a !important;
+}
+
+.dark .bg-\[\#e5ebd3\] {
+  background-color: rgba(131, 137, 33, 0.25) !important;
+}
+
+/* Reconstruction sidebar run active state */
+.dark .bg-\[\#f1edc9\] {
+  background-color: #18334e !important;
+}
+
+/* Dialog content in dark mode */
+.dark [role="dialog"],
+.dark [data-state="open"][class*="fixed"] {
+  background-color: #0e2033 !important;
+  color: #FAF7BB !important;
+  border-color: #264463 !important;
+}
+
+/* Sidebar Protection: ensure dark navy sidebar with cream badges keeps high-contrast dark text */
+.dark aside.bg-\[\#133458\] .bg-\[\#FAF7BB\],
+.dark aside.bg-\[\#133458\] .bg-\[\#FAF7BB\] .text-\[\#133458\],
+.dark aside.bg-\[\#133458\] .bg-\[\#D99B21\],
+.dark aside.bg-\[\#133458\] .bg-\[\#D99B21\] .text-\[\#133458\],
+.dark .bg-\[\#FAF7BB\] .text-\[\#133458\],
+.dark .bg-\[\#FAF7BB\].text-\[\#133458\],
+.dark .bg-\[\#D99B21\] .text-\[\#133458\],
+.dark .bg-\[\#D99B21\].text-\[\#133458\] {
+  color: #0b1724 !important;
+}
+
+/* SVG Chart High-Contrast Overrides */
+.dark svg text[fill="#133458"] {
+  fill: #FAF7BB !important;
+}
+
+.dark svg text[fill="#24384d"] {
+  fill: #CBD5E1 !important;
+}
+
+.dark svg g[fill="#133458"] text {
+  fill: #FAF7BB !important;
+}
+
+.dark svg g[stroke="#D8D0B3"] line,
+.dark svg line[stroke="#D8D0B3"],
+.dark svg path[stroke="#D8D0B3"] {
+  stroke: #203b5a !important;
+}
+
+.dark svg rect[fill="#FAF7BB"] {
+  fill: #0c1c2e !important;
+}
+
+.dark svg g[stroke="#133458"] line {
+  stroke: #486e96 !important;
+}
+
+.dark svg path[stroke="#133458"] {
+  stroke: #60A5FA !important;
+}
+
+.dark svg circle[stroke="#133458"] {
+  stroke: #FAF7BB !important;
+}
+
+.dark .border-l-\[\#133458\] {
+  border-left-color: #D99B21 !important;
+}
+
+.dark .border-t-\[\#133458\] {
+  border-top-color: #D99B21 !important;
+}
+
+/* =========================================================================
+   POP-UP DIALOG ENHANCED SPRING & OPTICAL FOCUS ANIMATIONS
+   ========================================================================= */
+
+@keyframes dialogOverlayShow {
+  0% {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+}
+
+@keyframes dialogOverlayHide {
+  0% {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+  100% {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+}
+
+@keyframes dialogContentShow {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 28px)) scale(0.93);
+    filter: blur(3px);
+  }
+  68% {
+    opacity: 1;
+    transform: translate(-50%, calc(-50% - 2px)) scale(1.006);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes dialogContentHide {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 14px)) scale(0.96);
+    filter: blur(2px);
+  }
+}
+
+.animate-dialog-overlay-show {
+  animation: dialogOverlayShow 320ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-dialog-overlay-hide {
+  animation: dialogOverlayHide 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-dialog-content-show {
+  animation: dialogContentShow 380ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-dialog-content-hide {
+  animation: dialogContentHide 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 @media (max-width: 767px) {
   .oe-page { padding: 24px 16px 40px; }
   .mobile-scroll { overflow-x: auto; scrollbar-width: none; }
