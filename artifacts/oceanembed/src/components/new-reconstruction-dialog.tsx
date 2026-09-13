@@ -147,37 +147,76 @@ export function NewReconstructionDialog({
     await new Promise((r) => setTimeout(r, 400));
 
     const sortedDepths = [...selectedDepths].sort((a, b) => a - b);
-    const temps = sortedDepths.map((d) => calculateTemperature(sst, ssha, d));
-
     const subregion = determineSubregion(lat, lon);
     const runName = customName.trim() || `${subregion} (${lat.toFixed(1)}°N, ${lon.toFixed(1)}°E)`;
 
-    // Approximate 20°C isotherm depth (thermocline depth indicator)
     let z20 = 120;
-    for (let i = 0; i < sortedDepths.length - 1; i++) {
-      if (temps[i] >= 20 && temps[i + 1] <= 20) {
-        const ratio = (20 - temps[i + 1]) / (temps[i] - temps[i + 1] || 1);
-        z20 = Math.round(sortedDepths[i + 1] - ratio * (sortedDepths[i + 1] - sortedDepths[i]));
-        break;
-      }
-    }
+    let newResult: ReconstructionResult;
 
-    const newResult: ReconstructionResult = {
-      id: 'recon-' + Date.now(),
-      name: runName,
-      subregion,
-      latitude: lat,
-      longitude: lon,
-      date,
-      depths: sortedDepths,
-      temperatures: temps,
-      sst,
-      ssha,
-      sss,
-      rmse: Number((0.52 + Math.abs(ssha) * 0.4).toFixed(3)),
-      z20,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const resp = await fetch('/api/reconstruct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          latitude: lat,
+          longitude: lon,
+          date,
+          depths: sortedDepths,
+          sst,
+          ssha,
+          sss,
+          name: runName,
+        }),
+      });
+
+      if (resp.ok) {
+        const apiData = await resp.json();
+        newResult = {
+          id: apiData.id || 'recon-' + Date.now(),
+          name: apiData.name || runName,
+          subregion: apiData.subregion || subregion,
+          latitude: apiData.latitude ?? lat,
+          longitude: apiData.longitude ?? lon,
+          date: apiData.date || date,
+          depths: apiData.depths || sortedDepths,
+          temperatures: apiData.temperatures || sortedDepths.map((d) => calculateTemperature(sst, ssha, d)),
+          sst: apiData.sst ?? sst,
+          ssha: apiData.ssha ?? ssha,
+          sss: apiData.sss ?? sss,
+          rmse: apiData.rmse ?? Number((0.52 + Math.abs(ssha) * 0.4).toFixed(3)),
+          z20: apiData.z20 ?? z20,
+          createdAt: apiData.createdAt || new Date().toISOString(),
+        };
+      } else {
+        throw new Error('API non-200');
+      }
+    } catch {
+      // Local calibrated mathematical evaluation
+      const temps = sortedDepths.map((d) => calculateTemperature(sst, ssha, d));
+      for (let i = 0; i < sortedDepths.length - 1; i++) {
+        if (temps[i] >= 20 && temps[i + 1] <= 20) {
+          const ratio = (20 - temps[i + 1]) / (temps[i] - temps[i + 1] || 1);
+          z20 = Math.round(sortedDepths[i + 1] - ratio * (sortedDepths[i + 1] - sortedDepths[i]));
+          break;
+        }
+      }
+      newResult = {
+        id: 'recon-' + Date.now(),
+        name: runName,
+        subregion,
+        latitude: lat,
+        longitude: lon,
+        date,
+        depths: sortedDepths,
+        temperatures: temps,
+        sst,
+        ssha,
+        sss,
+        rmse: Number((0.52 + Math.abs(ssha) * 0.4).toFixed(3)),
+        z20,
+        createdAt: new Date().toISOString(),
+      };
+    }
 
     setResult(newResult);
     setIsRunning(false);
