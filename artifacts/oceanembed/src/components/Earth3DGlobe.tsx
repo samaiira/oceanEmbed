@@ -808,15 +808,6 @@ export function Earth3DGlobe({
     }
   };
 
-  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-    setScale((prev) => {
-      const next = Math.max(0.65, Math.min(3.2, prev - e.deltaY * 0.0012));
-      scaleRef.current = next;
-      return next;
-    });
-  };
-
   const resetToNorthIndianOcean = () => {
     const l0 = (68 * Math.PI) / 180;
     const p0 = (15 * Math.PI) / 180;
@@ -889,7 +880,6 @@ export function Earth3DGlobe({
           setHoverCoord(null);
         }}
         onClick={handleClick}
-        onWheel={handleWheel}
       />
 
       {/* 2. Interactive SVG Pin Overlay & Domain Boundary */}
@@ -1247,7 +1237,7 @@ export function Earth3DGlobe({
 
       {/* Center Drag Hint if idle */}
       <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] text-[#FAF7BB]/40 font-data hidden sm:block">
-        Drag to rotate · Scroll to zoom · Hover & click inside Indian Ocean to pin
+        Drag to rotate · Hover & click inside Indian Ocean to pin
       </div>
     </div>
   );
