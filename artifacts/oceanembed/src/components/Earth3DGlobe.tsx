@@ -17,9 +17,13 @@ import {
   Maximize2,
   Minimize2,
   Sun,
-  Moon,
   Grid,
 } from 'lucide-react';
+
+import earthDayUrl from '@/assets/earth_daymap.jpg';
+import earthCloudsUrl from '@/assets/earth_clouds.png';
+import earthLightsUrl from '@/assets/earth_lights.png';
+import sstTextureUrl from '@/assets/sst_north_indian_ocean.jpg';
 
 export interface PinnedPoint {
   lat: number;
@@ -50,201 +54,19 @@ interface Earth3DGlobeProps {
   initialPin?: { lat: number; lon: number } | null;
 }
 
-// Starfield particles for hyperrealistic deep space backdrop
-interface Star {
-  x: number;
-  y: number;
-  size: number;
-  opacity: number;
-  twinkleSpeed: number;
-  color: string;
-}
-
-// Major nocturnal city lights on dark hemisphere
-const NIGHT_LIGHT_CLUSTERS: [number, number, number][] = [
-  // [lat, lon, intensity]
-  [18.97, 72.82, 1.0], // Mumbai
-  [28.61, 77.20, 1.0], // New Delhi
-  [13.08, 80.27, 0.9], // Chennai
-  [22.57, 88.36, 0.9], // Kolkata
-  [12.97, 77.59, 0.95], // Bengaluru
-  [17.38, 78.48, 0.85], // Hyderabad
-  [24.86, 67.00, 0.9], // Karachi
-  [31.52, 74.35, 0.8], // Lahore
-  [25.20, 55.27, 1.0], // Dubai
-  [24.71, 46.67, 0.85], // Riyadh
-  [23.58, 58.40, 0.75], // Muscat
-  [6.92, 79.86, 0.75], // Colombo
-  [23.81, 90.41, 0.85], // Dhaka
-  [1.35, 103.81, 1.0], // Singapore
-  [13.75, 100.50, 0.9], // Bangkok
-  [30.04, 31.23, 0.9], // Cairo
-  [-1.29, 36.82, 0.7], // Nairobi
-  [-26.20, 28.04, 0.85], // Johannesburg
-];
-
-// Rich, detailed continental outlines & major islands (lat, lon degrees)
-const CONTINENT_POLYGONS: {
-  coords: [number, number][];
-  type: 'land' | 'island' | 'desert' | 'snow';
-  name?: string;
-}[] = [
-  // Indian Subcontinent Mainmass
-  {
-    type: 'land',
-    name: 'India',
-    coords: [
-      [23.5, 68.0], [22.8, 69.2], [22.3, 70.0], [20.8, 70.8], [21.5, 72.2],
-      [20.5, 72.8], [19.0, 72.8], [16.0, 73.5], [14.0, 74.5], [11.0, 75.8],
-      [8.1, 77.5], [8.5, 78.2], [9.3, 79.1], [10.5, 79.8], [12.0, 80.0],
-      [13.1, 80.3], [16.0, 81.5], [17.7, 83.3], [19.5, 85.0], [21.5, 87.5],
-      [22.5, 89.0], [24.0, 90.0], [26.0, 89.0], [27.0, 85.0], [28.5, 80.0],
-      [31.0, 77.0], [33.0, 75.0], [31.5, 71.0], [27.0, 68.0], [25.0, 67.0],
-      [23.5, 68.0],
-    ],
-  },
-  // Thar Desert & Indus Basin (warm desert tones)
-  {
-    type: 'desert',
-    name: 'Thar',
-    coords: [
-      [28.0, 70.0], [28.5, 73.0], [26.0, 74.0], [24.0, 71.5], [25.5, 69.5],
-      [28.0, 70.0],
-    ],
-  },
-  // Himalayas & Tibetan Plateau Snowcaps
-  {
-    type: 'snow',
-    name: 'Himalayas',
-    coords: [
-      [29.5, 78.0], [31.0, 80.0], [30.5, 84.0], [28.5, 87.0], [28.0, 90.0],
-      [29.5, 93.0], [33.0, 88.0], [34.0, 82.0], [33.5, 76.0], [31.5, 76.5],
-      [29.5, 78.0],
-    ],
-  },
-  // Sri Lanka
-  {
-    type: 'island',
-    name: 'Sri Lanka',
-    coords: [
-      [9.8, 80.2], [9.0, 80.8], [8.0, 81.6], [6.5, 81.8], [5.9, 80.5],
-      [6.9, 79.8], [8.5, 79.7], [9.8, 80.2],
-    ],
-  },
-  // Arabian Peninsula (Desert & Mountains)
-  {
-    type: 'desert',
-    name: 'Arabia',
-    coords: [
-      [12.8, 43.3], [14.0, 48.0], [17.0, 54.0], [22.5, 59.8], [24.0, 57.5],
-      [26.2, 56.5], [25.5, 55.0], [24.5, 54.0], [24.0, 52.5], [26.0, 50.5],
-      [29.0, 48.5], [30.0, 48.0], [28.0, 43.0], [28.0, 36.0], [22.0, 39.0],
-      [16.0, 42.5], [12.8, 43.3],
-    ],
-  },
-  // East Africa, Horn of Africa & Sahara
-  {
-    type: 'land',
-    name: 'Africa',
-    coords: [
-      [30.0, 32.5], [25.0, 35.0], [20.0, 37.5], [15.5, 39.5], [12.0, 43.0],
-      [11.8, 51.2], [8.0, 50.0], [3.0, 46.0], [-1.0, 42.0], [-5.0, 39.0],
-      [-11.0, 40.5], [-16.0, 40.0], [-20.0, 35.5], [-26.0, 33.0], [-34.0, 26.0],
-      [-34.8, 20.0], [-30.0, 17.5], [-22.0, 14.5], [-15.0, 12.0], [-5.0, 12.0],
-      [4.0, 9.0], [6.0, 2.0], [4.5, -7.5], [11.0, -15.0], [15.0, -17.0],
-      [21.0, -17.0], [28.0, -13.0], [35.0, -6.0], [36.0, 0.0], [37.0, 10.0],
-      [31.5, 31.5], [30.0, 32.5],
-    ],
-  },
-  // Madagascar
-  {
-    type: 'island',
-    name: 'Madagascar',
-    coords: [
-      [-12.0, 49.3], [-15.5, 50.5], [-20.0, 48.5], [-25.5, 47.0], [-25.2, 44.5],
-      [-20.0, 44.0], [-16.0, 44.5], [-12.0, 49.3],
-    ],
-  },
-  // Southeast Asia (Myanmar, Thailand, Malaysia, Indochina)
-  {
-    type: 'land',
-    name: 'SE Asia',
-    coords: [
-      [22.0, 91.5], [20.5, 93.0], [16.0, 94.5], [16.0, 97.0], [12.0, 98.6],
-      [8.0, 98.3], [4.0, 100.5], [1.3, 103.8], [3.0, 103.5], [6.0, 102.0],
-      [10.0, 99.5], [13.0, 100.5], [13.5, 101.0], [10.5, 107.5], [15.0, 109.0],
-      [21.0, 108.0], [22.0, 105.0], [22.0, 91.5],
-    ],
-  },
-  // Sumatra & Java
-  {
-    type: 'island',
-    name: 'Sumatra',
-    coords: [
-      [5.5, 95.3], [3.0, 98.5], [-0.5, 101.5], [-4.5, 105.5], [-5.8, 106.0],
-      [-5.0, 103.0], [-2.0, 100.5], [1.5, 97.5], [5.5, 95.3],
-    ],
-  },
-  {
-    type: 'island',
-    name: 'Java',
-    coords: [
-      [-6.0, 106.0], [-6.5, 109.0], [-7.2, 112.5], [-8.2, 114.5], [-8.7, 111.0],
-      [-7.8, 108.5], [-6.8, 105.5], [-6.0, 106.0],
-    ],
-  },
-  // Andaman & Nicobar Archipelago
-  {
-    type: 'island',
-    name: 'Andaman',
-    coords: [
-      [13.5, 93.0], [12.0, 92.8], [11.5, 92.7], [10.5, 92.6],
-      [9.0, 92.8], [7.0, 93.8], [6.8, 93.8], [8.0, 93.5],
-      [11.5, 93.0], [13.5, 93.0],
-    ],
-  },
-  // Maldives & Lakshadweep Atoll Chain
-  {
-    type: 'island',
-    name: 'Lakshadweep-Maldives',
-    coords: [
-      [11.5, 72.8], [10.5, 72.6], [8.5, 73.0], [6.0, 73.2], [3.0, 73.4],
-      [0.5, 73.2], [-0.5, 73.2], [1.5, 73.6], [4.5, 73.5], [7.5, 73.0],
-      [11.5, 72.8],
-    ],
-  },
-  // Australia
-  {
-    type: 'land',
-    name: 'Australia',
-    coords: [
-      [-12.0, 131.0], [-15.0, 136.0], [-12.0, 142.0], [-18.0, 146.0], [-24.0, 151.0],
-      [-32.0, 153.0], [-38.0, 147.0], [-38.0, 141.0], [-35.0, 137.0], [-32.0, 132.0],
-      [-32.0, 125.0], [-35.0, 116.0], [-28.0, 114.0], [-22.0, 114.0], [-18.0, 122.0],
-      [-14.0, 126.0], [-12.0, 131.0],
-    ],
-  },
-  // Eurasia / Mediterranean / North Asia
-  {
-    type: 'land',
-    name: 'Eurasia',
-    coords: [
-      [36.0, -5.5], [43.0, -9.0], [48.0, -4.5], [51.0, 2.0], [54.0, 9.0],
-      [58.0, 11.0], [60.0, 25.0], [65.0, 25.0], [70.0, 30.0], [70.0, 60.0],
-      [70.0, 100.0], [60.0, 120.0], [45.0, 125.0], [35.0, 120.0], [25.0, 118.0],
-      [22.0, 114.0], [30.0, 105.0], [35.0, 90.0], [40.0, 70.0], [42.0, 50.0],
-      [40.0, 30.0], [36.0, 25.0], [40.0, 15.0], [38.0, 0.0], [36.0, -5.5],
-    ],
-  },
-];
-
-// Helper to estimate Sea Surface Temperature matching North Indian Ocean satellite data
+// Helper to estimate realistic ocean temperature (°C)
 function estimateSST(lat: number, lon: number): number {
   if (lat >= 5 && lat <= 30 && lon >= 45 && lon <= 105) {
-    const latFactor = (30 - lat) / 25; // 0 at 30°N, 1 at 5°N
-    const base = 22.5 + latFactor * 7.2;
-    const lonShift = lon < 77.5 ? -0.3 : 0.4;
-    return Number((base + lonShift).toFixed(1));
+    if (lon < 77.5) {
+      if (lat > 22) return 24.8;
+      if (lat > 16) return 26.5;
+      if (lat > 10) return 28.2;
+      return 29.0;
+    } else {
+      if (lat > 18) return 27.8;
+      if (lat > 12) return 28.6;
+      return 29.4;
+    }
   }
   const absLat = Math.abs(lat);
   if (absLat > 70) return 0.5;
@@ -271,6 +93,279 @@ function resolveOceanRegion(lat: number, lon: number): string {
   return 'Pacific / World Ocean';
 }
 
+// -------------------------------------------------------------
+// WebGL Shader Source Codes
+// -------------------------------------------------------------
+const VS_SOURCE = `
+attribute vec2 a_pos;
+void main() {
+  gl_Position = vec4(a_pos, 0.0, 1.0);
+}
+`;
+
+const FS_SOURCE = `
+precision highp float;
+
+uniform vec2 u_resolution;
+uniform vec2 u_center;
+uniform float u_radius;
+uniform float u_lambda0; // Longitude rotation (radians)
+uniform float u_phi0;    // Latitude tilt (radians)
+uniform vec3 u_sun_dir;  // Normalized sun direction in world coords
+uniform float u_cloud_offset;
+
+uniform sampler2D u_day_tex;
+uniform sampler2D u_night_tex;
+uniform sampler2D u_clouds_tex;
+uniform sampler2D u_sst_tex;
+
+uniform float u_show_sst;
+uniform float u_show_clouds;
+uniform float u_show_lights;
+uniform float u_show_grid;
+
+#define PI 3.141592653589793
+
+// Takes view-space unit vector (x, y, z) -> world-space vector
+vec3 viewToWorld(vec3 v) {
+  // Rotate around X-axis by +phi0
+  float cP = cos(u_phi0);
+  float sP = sin(u_phi0);
+  vec3 p1 = vec3(v.x, v.y * cP + v.z * sP, -v.y * sP + v.z * cP);
+  
+  // Rotate around Y-axis by +lambda0
+  float cL = cos(u_lambda0);
+  float sL = sin(u_lambda0);
+  return vec3(p1.x * cL + p1.z * sL, p1.y, -p1.x * sL + p1.z * cL);
+}
+
+// Takes world-space vector -> view-space vector
+vec3 worldToView(vec3 w) {
+  float cL = cos(-u_lambda0);
+  float sL = sin(-u_lambda0);
+  vec3 p1 = vec3(w.x * cL - w.z * sL, w.y, w.x * sL + w.z * cL);
+  
+  float cP = cos(-u_phi0);
+  float sP = sin(-u_phi0);
+  return vec3(p1.x, p1.y * cP - p1.z * sP, p1.y * sP + p1.z * cP);
+}
+
+void main() {
+  vec2 pixel = gl_FragCoord.xy;
+  vec2 d = (pixel - u_center) / u_radius;
+  float r2 = dot(d, d);
+  float r = sqrt(r2);
+
+  // Beyond Globe Radius: Deep space & atmospheric halo
+  if (r > 1.0) {
+    float dist = r - 1.0;
+    // Outer Rayleigh atmospheric scattering glow
+    float halo = exp(-dist * 18.0) * 0.45;
+    
+    vec3 sunView = worldToView(u_sun_dir);
+    float sunFacing = max(0.0, dot(normalize(vec3(d, 0.2)), sunView));
+    float haloIntensity = halo * (0.35 + 0.65 * pow(sunFacing, 1.5));
+    vec3 haloCol = vec3(0.2, 0.55, 0.98) * haloIntensity;
+
+    // Distant Stars
+    vec2 starSeed = floor(pixel * 0.75);
+    float starRnd = fract(sin(dot(starSeed, vec2(12.9898, 78.233))) * 43758.5453);
+    vec3 starCol = vec3(0.0);
+    if (starRnd > 0.9982) {
+      float bright = fract(starRnd * 89.1) * 0.7 + 0.3;
+      starCol = vec3(bright * 0.9, bright * 0.95, bright);
+    }
+
+    gl_FragColor = vec4(haloCol + starCol, 1.0);
+    return;
+  }
+
+  // Inside Globe: Photorealistic 3D Earth
+  float z = sqrt(max(0.0, 1.0 - r2));
+  vec3 normView = vec3(d.x, d.y, z);
+  vec3 normWorld = viewToWorld(normView);
+
+  // Lat / Lon
+  float lat = asin(clamp(normWorld.y, -1.0, 1.0));
+  float lon = atan(normWorld.x, normWorld.z);
+
+  // UV mapping
+  float u = lon / (2.0 * PI) + 0.5;
+  float v = 0.5 - lat / PI;
+
+  // 1. Day texture (NASA Blue Marble)
+  vec4 dayTex = texture2D(u_day_tex, vec2(fract(u), clamp(v, 0.001, 0.999)));
+
+  // Ocean mask: oceans are darker with strong blue dominance
+  float oceanMask = clamp((dayTex.b - dayTex.r * 1.05) * 4.0, 0.0, 1.0);
+  if (lat > 1.25 || lat < -1.15) oceanMask = 0.0; // Polar ice
+
+  // 2. Solar Illumination & Day-Night Terminator
+  float NdotL = dot(normWorld, u_sun_dir);
+  float sunIllum = smoothstep(-0.15, 0.20, NdotL);
+  float nightIllum = 1.0 - smoothstep(-0.25, 0.08, NdotL);
+
+  // 3. Night City Lights
+  vec3 nightLightCol = vec3(0.0);
+  if (u_show_lights > 0.5 && nightIllum > 0.01) {
+    vec4 nightTex = texture2D(u_night_tex, vec2(fract(u), clamp(v, 0.001, 0.999)));
+    nightLightCol = nightTex.rgb * 1.8 * nightIllum;
+  }
+
+  // 4. Cloud Layer
+  vec4 cloudCol = vec4(0.0);
+  if (u_show_clouds > 0.5) {
+    float cloudU = fract(u + u_cloud_offset);
+    vec4 cloudTex = texture2D(u_clouds_tex, vec2(cloudU, clamp(v, 0.001, 0.999)));
+    cloudCol = cloudTex * 0.75;
+  }
+
+  // 5. SST Heatmap Overlay (North Indian Ocean Domain: 5-30°N, 45-105°E)
+  vec4 sstCol = vec4(0.0);
+  if (u_show_sst > 0.5 && oceanMask > 0.15) {
+    float latDeg = lat * 180.0 / PI;
+    float lonDeg = lon * 180.0 / PI;
+    if (latDeg >= 5.0 && latDeg <= 30.0 && lonDeg >= 45.0 && lonDeg <= 105.0) {
+      float uSst = (lonDeg - 45.0) / (105.0 - 45.0);
+      float vSst = (30.0 - latDeg) / (30.0 - 5.0);
+      vec4 sstSample = texture2D(u_sst_tex, vec2(clamp(uSst, 0.0, 1.0), clamp(vSst, 0.0, 1.0)));
+      
+      // Fluid Rainbow Thermal Colormap
+      float estSst = 28.5 - abs(latDeg - 12.0) * 0.35 + sin(lonDeg * 0.1) * 0.6;
+      float norm = clamp((estSst - 22.0) / 8.0, 0.0, 1.0);
+      vec3 procHeat = vec3(
+        clamp(1.5 - abs(norm * 4.0 - 3.0), 0.0, 1.0),
+        clamp(1.5 - abs(norm * 4.0 - 2.0), 0.0, 1.0),
+        clamp(1.5 - abs(norm * 4.0 - 1.0), 0.0, 1.0)
+      );
+      vec3 finalHeat = (sstSample.a > 0.1 && (sstSample.r + sstSample.g + sstSample.b) > 0.1)
+        ? sstSample.rgb
+        : procHeat;
+      sstCol = vec4(finalHeat, 0.62 * oceanMask);
+    }
+  }
+
+  // 6. Specular Solar Glint on Oceans
+  vec3 sunView = worldToView(u_sun_dir);
+  vec3 viewDir = vec3(0.0, 0.0, 1.0);
+  vec3 halfVec = normalize(sunView + viewDir);
+  float spec = pow(max(0.0, dot(normView, halfVec)), 28.0) * oceanMask * sunIllum * (1.0 - cloudCol.a * 0.8);
+  vec3 specCol = vec3(1.0, 0.95, 0.85) * spec * 0.65;
+
+  // 7. Graticule Lines (Equator, Tropics, Grid)
+  vec3 gridCol = vec3(0.0);
+  if (u_show_grid > 0.5) {
+    float latDeg = lat * 180.0 / PI;
+    float lonDeg = lon * 180.0 / PI;
+    float latMod = abs(mod(latDeg + 90.0, 15.0));
+    float lonMod = abs(mod(lonDeg + 180.0, 15.0));
+    float isEquator = 1.0 - smoothstep(0.0, 0.55, abs(latDeg));
+    float isTropic = 1.0 - smoothstep(0.0, 0.45, abs(abs(latDeg) - 23.5));
+    float gridLine = max(1.0 - smoothstep(0.0, 0.35, min(latMod, 15.0 - latMod)),
+                         1.0 - smoothstep(0.0, 0.35, min(lonMod, 15.0 - lonMod)));
+    if (isEquator > 0.1) {
+      gridCol = vec3(0.85, 0.61, 0.13) * isEquator * 0.75;
+    } else if (isTropic > 0.1) {
+      gridCol = vec3(0.85, 0.61, 0.13) * isTropic * 0.45;
+    } else if (gridLine > 0.1) {
+      gridCol = vec3(0.6, 0.8, 1.0) * gridLine * 0.22;
+    }
+  }
+
+  // 8. Surface Composite
+  vec3 surfColor = dayTex.rgb * (0.10 + 0.90 * sunIllum);
+
+  if (sstCol.a > 0.0) {
+    surfColor = mix(surfColor, sstCol.rgb, sstCol.a);
+  }
+  surfColor += specCol;
+  surfColor += nightLightCol;
+
+  if (cloudCol.a > 0.0) {
+    vec3 litCloud = cloudCol.rgb * (0.10 + 0.90 * sunIllum);
+    surfColor = mix(surfColor, litCloud, cloudCol.a * (0.45 + 0.55 * sunIllum));
+  }
+
+  surfColor += gridCol;
+
+  // 9. Atmospheric Fresnel Rim Glow
+  float fresnel = pow(1.0 - z, 3.2);
+  vec3 atmoCol = vec3(0.3, 0.65, 1.0) * fresnel * (0.25 + 0.75 * sunIllum) * 0.85;
+  surfColor += atmoCol;
+
+  gl_FragColor = vec4(surfColor, 1.0);
+}
+`;
+
+function createShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
+  const shader = gl.createShader(type);
+  if (!shader) return null;
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+    return null;
+  }
+  return shader;
+}
+
+function createProgram(
+  gl: WebGLRenderingContext,
+  vsSource: string,
+  fsSource: string
+): WebGLProgram | null {
+  const vs = createShader(gl, gl.VERTEX_SHADER, vsSource);
+  const fs = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+  if (!vs || !fs) return null;
+  const program = gl.createProgram();
+  if (!program) return null;
+  gl.attachShader(program, vs);
+  gl.attachShader(program, fs);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error('Program link error:', gl.getProgramInfoLog(program));
+    gl.deleteProgram(program);
+    return null;
+  }
+  return program;
+}
+
+function loadTexture(gl: WebGLRenderingContext, url: string): WebGLTexture | null {
+  const texture = gl.createTexture();
+  if (!texture) return null;
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  // Temporary 1x1 placeholder pixel while image loads
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    1,
+    1,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    new Uint8Array([15, 35, 60, 255])
+  );
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  };
+  img.src = url;
+  return texture;
+}
+
+// -------------------------------------------------------------
+// Component
+// -------------------------------------------------------------
 export function Earth3DGlobe({
   compact = false,
   expanded = false,
@@ -284,21 +379,30 @@ export function Earth3DGlobe({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Rotation angles (radians)
-  // Center initially on North Indian Ocean: ~15°N, ~68°E
+  // Default focus: North Indian Ocean / Arabian Sea (15°N, 68°E)
   const [lambda0, setLambda0] = useState<number>((68 * Math.PI) / 180);
   const [phi0, setPhi0] = useState<number>((15 * Math.PI) / 180);
   const [scale, setScale] = useState<number>(compact && !expanded ? 1.05 : 1.35);
-  const [autoRotate, setAutoRotate] = useState<boolean>(true);
 
-  // Photorealistic Layer Toggles
+  // USER REQUIREMENT: Stop revolving the Earth by default!
+  const [autoRotate, setAutoRotate] = useState<boolean>(false);
+
+  // Layer Toggles
   const [showSst, setShowSst] = useState<boolean>(true);
   const [showClouds, setShowClouds] = useState<boolean>(true);
   const [showNightLights, setShowNightLights] = useState<boolean>(true);
   const [showGraticules, setShowGraticules] = useState<boolean>(true);
 
-  // Sunlight / Day-Night Phase Angle (slowly rotates around the planet)
-  const [sunAngle, setSunAngle] = useState<number>(0.65); // angle in radians
+  // Fixed daylight sun vector (shining from ~Southeast to light up Indian Ocean)
+  const sunDir = useMemo<[number, number, number]>(() => {
+    const latSun = (12 * Math.PI) / 180;
+    const lonSun = (75 * Math.PI) / 180;
+    return [
+      Math.cos(latSun) * Math.sin(lonSun),
+      Math.sin(latSun),
+      Math.cos(latSun) * Math.cos(lonSun),
+    ];
+  }, []);
 
   // Interaction State
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -309,7 +413,7 @@ export function Earth3DGlobe({
     phi: 0,
   });
 
-  // Hover & Pinned Point Coordinates
+  // Coordinates
   const [hoverCoord, setHoverCoord] = useState<{
     lat: number;
     lon: number;
@@ -319,608 +423,247 @@ export function Earth3DGlobe({
     region: string;
   } | null>(null);
 
-  const [pinnedPoint, setPinnedPoint] = useState<PinnedPoint | null>(
-    initialPin
-      ? {
-          lat: initialPin.lat,
-          lon: initialPin.lon,
-          sst: estimateSST(initialPin.lat, initialPin.lon),
-          region: resolveOceanRegion(initialPin.lat, initialPin.lon),
-        }
-      : {
-          lat: 15.5,
-          lon: 65.0,
-          sst: 27.8,
-          region: 'Central Arabian Sea Basin',
-        }
-  );
+  const [pinnedPoint, setPinnedPoint] = useState<PinnedPoint | null>(() => {
+    if (initialPin) {
+      return {
+        lat: initialPin.lat,
+        lon: initialPin.lon,
+        sst: estimateSST(initialPin.lat, initialPin.lon),
+        region: resolveOceanRegion(initialPin.lat, initialPin.lon),
+        depths: [0, 10, 20, 50, 100, 200, 500, 1000],
+      };
+    }
+    return null;
+  });
 
   const [copied, setCopied] = useState<boolean>(false);
-  const [cloudOffset, setCloudOffset] = useState<number>(0);
 
-  // Pre-generate deep space starfield
-  const stars = useMemo<Star[]>(() => {
-    const list: Star[] = [];
-    const colors = ['#ffffff', '#e0f2fe', '#bae6fd', '#fef3c7', '#fed7aa'];
-    for (let i = 0; i < 180; i++) {
-      list.push({
-        x: Math.random(),
-        y: Math.random(),
-        size: Math.random() * 1.8 + 0.4,
-        opacity: Math.random() * 0.75 + 0.25,
-        twinkleSpeed: Math.random() * 0.03 + 0.008,
-        color: colors[Math.floor(Math.random() * colors.length)],
-      });
-    }
-    return list;
-  }, []);
+  // WebGL State Refs
+  const glRef = useRef<WebGLRenderingContext | null>(null);
+  const programRef = useRef<WebGLProgram | null>(null);
+  const texturesRef = useRef<{
+    day: WebGLTexture | null;
+    night: WebGLTexture | null;
+    clouds: WebGLTexture | null;
+    sst: WebGLTexture | null;
+  }>({
+    day: null,
+    night: null,
+    clouds: null,
+    sst: null,
+  });
 
-  // Update scale when expanded changes
-  useEffect(() => {
-    if (expanded) {
-      setScale(1.55);
-    } else {
-      setScale(compact ? 1.08 : 1.35);
-    }
-  }, [expanded, compact]);
-
-  // 3D Spherical Orthographic Projection: (lat, lon) -> screen (x, y, visible, depth)
+  // Project (lat, lon) in degrees to 2D screen coordinates
   const project = useCallback(
     (latDeg: number, lonDeg: number, cx: number, cy: number, radius: number) => {
-      const phi = (latDeg * Math.PI) / 180;
-      const lambda = (lonDeg * Math.PI) / 180;
-      const deltaLambda = lambda - lambda0;
+      const lat = (latDeg * Math.PI) / 180;
+      const lon = (lonDeg * Math.PI) / 180;
 
-      const cosC =
-        Math.sin(phi0) * Math.sin(phi) +
-        Math.cos(phi0) * Math.cos(phi) * Math.cos(deltaLambda);
+      // World vector
+      const wx = Math.cos(lat) * Math.sin(lon);
+      const wy = Math.sin(lat);
+      const wz = Math.cos(lat) * Math.cos(lon);
 
-      const isVisible = cosC >= 0;
+      // Rotate around Y by -lambda0
+      const cL = Math.cos(-lambda0);
+      const sL = Math.sin(-lambda0);
+      const p1x = wx * cL - wz * sL;
+      const p1y = wy;
+      const p1z = wx * sL + wz * cL;
 
-      const x = radius * Math.cos(phi) * Math.sin(deltaLambda);
-      const y = -radius * (Math.cos(phi0) * Math.sin(phi) - Math.sin(phi0) * Math.cos(phi) * Math.cos(deltaLambda));
+      // Rotate around X by -phi0
+      const cP = Math.cos(-phi0);
+      const sP = Math.sin(-phi0);
+      const vx = p1x;
+      const vy = p1y * cP - p1z * sP;
+      const vz = p1y * sP + p1z * cP;
 
-      return {
-        x: cx + x,
-        y: cy + y,
-        visible: isVisible,
-        depth: cosC, // 0 at horizon, 1 at center
-      };
+      const visible = vz > 0;
+      const x = cx + vx * radius;
+      const y = cy - vy * radius;
+
+      return { x, y, visible, z: vz };
     },
     [lambda0, phi0]
   );
 
-  // Inverse Spherical Orthographic: screen (px, py) -> (lat, lon)
+  // Raycast screen pixel (x, y) to spherical (lat, lon)
   const unproject = useCallback(
-    (px: number, py: number, cx: number, cy: number, radius: number): { lat: number; lon: number } | null => {
-      const x = px - cx;
-      const y = -(py - cy);
-      const rho = Math.sqrt(x * x + y * y);
+    (pixelX: number, pixelY: number, cx: number, cy: number, radius: number) => {
+      const nx = (pixelX - cx) / radius;
+      const ny = -(pixelY - cy) / radius;
+      const r2 = nx * nx + ny * ny;
+      if (r2 > 1.0) return null;
 
-      if (rho > radius) return null; // Outside globe sphere
+      const nz = Math.sqrt(Math.max(0, 1.0 - r2));
 
-      const c = Math.asin(rho / radius);
-      const sinC = Math.sin(c);
-      const cosC = Math.cos(c);
+      // Rotate around X by +phi0
+      const cP = Math.cos(phi0);
+      const sP = Math.sin(phi0);
+      const p1x = nx;
+      const p1y = ny * cP + nz * sP;
+      const p1z = -ny * sP + nz * cP;
 
-      let phi = phi0;
-      let lambda = lambda0;
+      // Rotate around Y by +lambda0
+      const cL = Math.cos(lambda0);
+      const sL = Math.sin(lambda0);
+      const wx = p1x * cL + p1z * sL;
+      const wy = p1y;
+      const wz = -p1x * sL + p1z * cL;
 
-      if (rho > 0.0001) {
-        phi = Math.asin(cosC * Math.sin(phi0) + (y * sinC * Math.cos(phi0)) / rho);
-        const numerator = x * sinC;
-        const denominator = rho * Math.cos(phi0) * cosC - y * Math.sin(phi0) * sinC;
-        const deltaLambda = Math.atan2(numerator, denominator);
-        lambda = lambda0 + deltaLambda;
-      }
+      const latRad = Math.asin(Math.max(-1, Math.min(1, wy)));
+      const lonRad = Math.atan2(wx, wz);
 
-      let lonDeg = (lambda * 180) / Math.PI;
-      lonDeg = ((((lonDeg + 180) % 360) + 360) % 360) - 180;
-      const latDeg = (phi * 180) / Math.PI;
+      const lat = Number(((latRad * 180) / Math.PI).toFixed(2));
+      const lon = Number(((lonRad * 180) / Math.PI).toFixed(2));
 
-      return {
-        lat: Number(latDeg.toFixed(2)),
-        lon: Number(lonDeg.toFixed(2)),
-      };
+      return { lat, lon };
     },
     [lambda0, phi0]
   );
 
-  // Auto-rotation & cloud drift animation loop
-  useEffect(() => {
-    let animId: number;
-    const tick = () => {
-      if (autoRotate && !isDragging) {
-        setLambda0((prev) => {
-          let next = prev + 0.0016;
-          if (next > Math.PI) next -= 2 * Math.PI;
-          return next;
-        });
-      }
-      setCloudOffset((prev) => prev + 0.0008);
-      animId = requestAnimationFrame(tick);
-    };
-    animId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animId);
-  }, [autoRotate, isDragging]);
-
-  // Main Hyperrealistic Canvas Rendering Loop
+  // -------------------------------------------------------------
+  // WebGL Initialization & Render Loop
+  // -------------------------------------------------------------
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
 
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-    const dpr = window.devicePixelRatio || 1;
+    const gl =
+      canvas.getContext('webgl', { antialias: true, alpha: false }) ||
+      (canvas.getContext('experimental-webgl') as WebGLRenderingContext | null);
 
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    ctx.scale(dpr, dpr);
+    if (!gl) {
+      console.warn('WebGL not supported on this device');
+      return;
+    }
+    glRef.current = gl;
 
-    const cx = width / 2;
-    const cy = height / 2;
-    const baseRadius = Math.min(width, height) * 0.44;
-    const radius = baseRadius * scale;
+    const program = createProgram(gl, VS_SOURCE, FS_SOURCE);
+    if (!program) return;
+    programRef.current = program;
 
-    ctx.clearRect(0, 0, width, height);
-
-    // 1. Deep Space Cosmic Background with Twinkling Stars
-    const spaceGrad = ctx.createRadialGradient(cx, cy, radius * 0.4, cx, cy, width * 0.8);
-    spaceGrad.addColorStop(0, '#0a1626');
-    spaceGrad.addColorStop(0.5, '#06101e');
-    spaceGrad.addColorStop(1, '#020710');
-    ctx.fillStyle = spaceGrad;
-    ctx.fillRect(0, 0, width, height);
-
-    // Render distant starfield
-    stars.forEach((star) => {
-      const sx = star.x * width;
-      const sy = star.y * height;
-      // Skip stars directly behind the opaque globe center
-      const distFromCenter = Math.hypot(sx - cx, sy - cy);
-      if (distFromCenter < radius * 0.98) return;
-
-      const twinkle = Math.sin(Date.now() * star.twinkleSpeed) * 0.3 + 0.7;
-      ctx.beginPath();
-      ctx.arc(sx, sy, star.size, 0, Math.PI * 2);
-      ctx.fillStyle = star.color;
-      ctx.globalAlpha = star.opacity * twinkle;
-      ctx.fill();
-    });
-    ctx.globalAlpha = 1.0;
-
-    // 2. Multi-layer Atmospheric Rayleigh Scattering (Outer Blue/Cyan Glow Halo)
-    const haloOuter = ctx.createRadialGradient(cx, cy, radius * 0.95, cx, cy, radius * 1.22);
-    haloOuter.addColorStop(0, 'rgba(56, 189, 248, 0.45)'); // Electric cyan
-    haloOuter.addColorStop(0.3, 'rgba(30, 90, 180, 0.25)'); // Sapphire blue
-    haloOuter.addColorStop(0.7, 'rgba(15, 40, 110, 0.1)');
-    haloOuter.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = haloOuter;
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius * 1.22, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 3. Earth Globe Sphere Clip
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.clip();
-
-    // 3a. Photorealistic Ocean Base & Bathymetric Gradient
-    // Simulated directional sunlight source at (cx - radius * 0.45, cy - radius * 0.4)
-    const sunX = cx - radius * 0.45 * Math.cos(sunAngle);
-    const sunY = cy - radius * 0.45 * Math.sin(sunAngle);
-
-    const oceanGrad = ctx.createRadialGradient(
-      sunX,
-      sunY,
-      radius * 0.1,
-      cx,
-      cy,
-      radius * 1.05
+    // Fullscreen quad buffer
+    const posBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+      gl.STATIC_DRAW
     );
-    oceanGrad.addColorStop(0, '#1c5585'); // Illuminated tropical ocean
-    oceanGrad.addColorStop(0.35, '#10375c'); // Deep azure
-    oceanGrad.addColorStop(0.75, '#09213d'); // Abyssal navy
-    oceanGrad.addColorStop(1, '#030c17'); // Dark limb
-    ctx.fillStyle = oceanGrad;
-    ctx.fillRect(0, 0, width, height);
 
-    // 3b. Continental Shelf Shallow Reef Glow (Turquoise fringing waters around coasts)
-    CONTINENT_POLYGONS.forEach((poly) => {
-      ctx.beginPath();
-      let started = false;
-      poly.coords.forEach(([lat, lon]) => {
-        const pt = project(lat, lon, cx, cy, radius);
-        if (pt.visible) {
-          if (!started) {
-            ctx.moveTo(pt.x, pt.y);
-            started = true;
-          } else {
-            ctx.lineTo(pt.x, pt.y);
-          }
-        }
-      });
-      if (started) {
-        ctx.strokeStyle = 'rgba(32, 163, 158, 0.35)'; // Turquoise reef shelf
-        ctx.lineWidth = 9;
-        ctx.lineJoin = 'round';
-        ctx.stroke();
+    // Load Photorealistic Textures
+    texturesRef.current = {
+      day: loadTexture(gl, earthDayUrl),
+      night: loadTexture(gl, earthLightsUrl),
+      clouds: loadTexture(gl, earthCloudsUrl),
+      sst: loadTexture(gl, sstTextureUrl),
+    };
+
+    let animationFrameId: number;
+    let cloudOffset = 0;
+
+    const render = () => {
+      if (!canvas || !gl || !programRef.current) return;
+
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
       }
-    });
 
-    // 3c. Graticules (Latitude & Longitude grid lines)
-    if (showGraticules) {
-      ctx.lineWidth = 0.75;
-      for (let lat = -75; lat <= 75; lat += 15) {
-        ctx.beginPath();
-        let hasStarted = false;
-        const isEquator = lat === 0;
-        const isTropic = Math.abs(lat) === 23.5;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clearColor(0.02, 0.05, 0.1, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
 
-        for (let lon = -180; lon <= 180; lon += 3) {
-          const pt = project(lat, lon, cx, cy, radius);
-          if (pt.visible) {
-            if (!hasStarted) {
-              ctx.moveTo(pt.x, pt.y);
-              hasStarted = true;
-            } else {
-              ctx.lineTo(pt.x, pt.y);
-            }
-          } else {
-            hasStarted = false;
-          }
-        }
-        ctx.strokeStyle = isEquator
-          ? 'rgba(217, 155, 33, 0.75)'
-          : isTropic
-          ? 'rgba(217, 155, 33, 0.4)'
-          : 'rgba(180, 220, 255, 0.16)';
-        ctx.lineWidth = isEquator ? 1.4 : 0.75;
-        if (isTropic) ctx.setLineDash([3, 4]);
-        else ctx.setLineDash([]);
-        ctx.stroke();
+      gl.useProgram(programRef.current);
+
+      // Bind quad vertices
+      const posLoc = gl.getAttribLocation(programRef.current, 'a_pos');
+      gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+      gl.enableVertexAttribArray(posLoc);
+      gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+      const cx = (width * dpr) / 2;
+      const cy = (height * dpr) / 2;
+      const radius = (Math.min(width, height) / 2) * 0.76 * scale * dpr;
+
+      // Set Uniforms
+      gl.uniform2f(gl.getUniformLocation(programRef.current, 'u_resolution'), canvas.width, canvas.height);
+      gl.uniform2f(gl.getUniformLocation(programRef.current, 'u_center'), cx, cy);
+      gl.uniform1f(gl.getUniformLocation(programRef.current, 'u_radius'), radius);
+      gl.uniform1f(gl.getUniformLocation(programRef.current, 'u_lambda0'), lambda0);
+      gl.uniform1f(gl.getUniformLocation(programRef.current, 'u_phi0'), phi0);
+      gl.uniform3f(gl.getUniformLocation(programRef.current, 'u_sun_dir'), sunDir[0], sunDir[1], sunDir[2]);
+      gl.uniform1f(gl.getUniformLocation(programRef.current, 'u_cloud_offset'), cloudOffset);
+
+      gl.uniform1f(gl.getUniformLocation(programRef.current, 'u_show_sst'), showSst ? 1.0 : 0.0);
+      gl.uniform1f(gl.getUniformLocation(programRef.current, 'u_show_clouds'), showClouds ? 1.0 : 0.0);
+      gl.uniform1f(gl.getUniformLocation(programRef.current, 'u_show_lights'), showNightLights ? 1.0 : 0.0);
+      gl.uniform1f(gl.getUniformLocation(programRef.current, 'u_show_grid'), showGraticules ? 1.0 : 0.0);
+
+      // Textures
+      const texs = texturesRef.current;
+      if (texs.day) {
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, texs.day);
+        gl.uniform1i(gl.getUniformLocation(programRef.current, 'u_day_tex'), 0);
       }
-      ctx.setLineDash([]);
-
-      for (let lon = -180; lon <= 180; lon += 15) {
-        ctx.beginPath();
-        let hasStarted = false;
-        const isPrime = lon === 0 || lon === 70;
-        for (let lat = -85; lat <= 85; lat += 2) {
-          const pt = project(lat, lon, cx, cy, radius);
-          if (pt.visible) {
-            if (!hasStarted) {
-              ctx.moveTo(pt.x, pt.y);
-              hasStarted = true;
-            } else {
-              ctx.lineTo(pt.x, pt.y);
-            }
-          } else {
-            hasStarted = false;
-          }
-        }
-        ctx.strokeStyle = isPrime ? 'rgba(217, 155, 33, 0.55)' : 'rgba(180, 220, 255, 0.14)';
-        ctx.lineWidth = isPrime ? 1.1 : 0.6;
-        ctx.stroke();
+      if (texs.night) {
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, texs.night);
+        gl.uniform1i(gl.getUniformLocation(programRef.current, 'u_night_tex'), 1);
       }
-    }
-
-    // 3d. Satellite Sea Surface Temperature (SST) Thermal Heat Map
-    // High-resolution smooth fluid thermal gradient across North Indian Ocean (5-30°N, 42-100°E)
-    if (showSst) {
-      const sstLatSteps = 22;
-      const sstLonSteps = 32;
-      for (let i = 0; i < sstLatSteps; i++) {
-        const lat1 = 5 + (i * 25) / sstLatSteps;
-        const lat2 = 5 + ((i + 1) * 25) / sstLatSteps;
-        for (let j = 0; j < sstLonSteps; j++) {
-          const lon1 = 43 + (j * 57) / sstLonSteps;
-          const lon2 = 43 + ((j + 1) * 57) / sstLonSteps;
-
-          const p1 = project(lat1, lon1, cx, cy, radius);
-          const p2 = project(lat1, lon2, cx, cy, radius);
-          const p3 = project(lat2, lon2, cx, cy, radius);
-          const p4 = project(lat2, lon1, cx, cy, radius);
-
-          if (p1.visible && p2.visible && p3.visible && p4.visible) {
-            const midLat = (lat1 + lat2) / 2;
-            const midLon = (lon1 + lon2) / 2;
-            const sstVal = estimateSST(midLat, midLon);
-
-            // Rainbow Colormap: 22°C (Deep Blue) -> 25°C (Cyan) -> 27°C (Lime/Yellow) -> 29°C (Orange) -> 30°C (Crimson)
-            const norm = Math.max(0, Math.min(1, (sstVal - 22.0) / 8.0));
-            let r = 0, g = 0, b = 0;
-            if (norm < 0.25) {
-              const t = norm / 0.25;
-              r = Math.round(15 + 10 * t);
-              g = Math.round(40 + 175 * t);
-              b = Math.round(210 + 40 * t);
-            } else if (norm < 0.5) {
-              const t = (norm - 0.25) / 0.25;
-              r = Math.round(25 + 90 * t);
-              g = Math.round(215 + 25 * t);
-              b = Math.round(250 - 190 * t);
-            } else if (norm < 0.75) {
-              const t = (norm - 0.5) / 0.25;
-              r = Math.round(115 + 135 * t);
-              g = Math.round(240 - 45 * t);
-              b = Math.round(60 - 50 * t);
-            } else {
-              const t = (norm - 0.75) / 0.25;
-              r = Math.round(250 + 5 * t);
-              g = Math.round(195 - 180 * t);
-              b = Math.round(10 + 10 * t);
-            }
-
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.lineTo(p3.x, p3.y);
-            ctx.lineTo(p4.x, p4.y);
-            ctx.closePath();
-            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.62)`;
-            ctx.fill();
-          }
-        }
+      if (texs.clouds) {
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, texs.clouds);
+        gl.uniform1i(gl.getUniformLocation(programRef.current, 'u_clouds_tex'), 2);
       }
-    }
-
-    // 3e. Photorealistic Continents & Biomes (Deserts, Forests, Mountains, Coastlines)
-    CONTINENT_POLYGONS.forEach((poly) => {
-      ctx.beginPath();
-      let started = false;
-      poly.coords.forEach(([lat, lon]) => {
-        const pt = project(lat, lon, cx, cy, radius);
-        if (pt.visible) {
-          if (!started) {
-            ctx.moveTo(pt.x, pt.y);
-            started = true;
-          } else {
-            ctx.lineTo(pt.x, pt.y);
-          }
-        }
-      });
-
-      if (started) {
-        ctx.closePath();
-        if (poly.type === 'desert') {
-          // Warm desert dunes (Rub' al Khali / Thar)
-          ctx.fillStyle = '#8f7754';
-          ctx.strokeStyle = '#a88f6b';
-        } else if (poly.type === 'snow') {
-          // Glacial snowcaps (Himalayas)
-          ctx.fillStyle = '#e8f1f5';
-          ctx.strokeStyle = '#ffffff';
-        } else if (poly.type === 'island') {
-          // Tropical emerald islands
-          ctx.fillStyle = '#2f6946';
-          ctx.strokeStyle = '#489466';
-        } else {
-          // Lush continental vegetation
-          ctx.fillStyle = '#31543e';
-          ctx.strokeStyle = '#4e7e60';
-        }
-        ctx.lineWidth = 1.2;
-        ctx.fill();
-        ctx.stroke();
+      if (texs.sst) {
+        gl.activeTexture(gl.TEXTURE3);
+        gl.bindTexture(gl.TEXTURE_2D, texs.sst);
+        gl.uniform1i(gl.getUniformLocation(programRef.current, 'u_sst_tex'), 3);
       }
-    });
 
-    // 3f. Night Lights on Dark Hemisphere
-    if (showNightLights) {
-      NIGHT_LIGHT_CLUSTERS.forEach(([lat, lon, intensity]) => {
-        const pt = project(lat, lon, cx, cy, radius);
-        if (pt.visible) {
-          // Only show on unlit/dusk side
-          const sunDist = Math.hypot(pt.x - sunX, pt.y - sunY);
-          if (sunDist > radius * 0.75) {
-            const darkness = Math.min(1.0, (sunDist - radius * 0.75) / (radius * 0.4));
-            ctx.beginPath();
-            ctx.arc(pt.x, pt.y, 2.2 * intensity, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255, 214, 102, ${0.85 * darkness * intensity})`;
-            ctx.shadowColor = '#fbbf24';
-            ctx.shadowBlur = 6;
-            ctx.fill();
-            ctx.shadowBlur = 0;
-          }
-        }
-      });
-    }
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    // 3g. Hyperrealistic Swirling Clouds & Intertropical Convergence Bands (ITCZ)
-    if (showClouds) {
-      ctx.save();
-      ctx.globalAlpha = 0.32;
-      // Monsoonal cloud swirls over Indian Ocean
-      for (let c = 0; c < 16; c++) {
-        const cloudLat = 2 + Math.sin(c * 0.8 + cloudOffset * 2) * 9;
-        const cloudLon = 40 + ((c * 18 + cloudOffset * 90) % 140);
-        const pt = project(cloudLat, cloudLon, cx, cy, radius);
-        if (pt.visible) {
-          const cloudGrad = ctx.createRadialGradient(pt.x, pt.y, 2, pt.x, pt.y, radius * 0.18);
-          cloudGrad.addColorStop(0, 'rgba(255, 255, 255, 0.7)');
-          cloudGrad.addColorStop(0.5, 'rgba(235, 245, 255, 0.35)');
-          cloudGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-          ctx.fillStyle = cloudGrad;
-          ctx.beginPath();
-          ctx.arc(pt.x, pt.y, radius * 0.18, 0, Math.PI * 2);
-          ctx.fill();
-        }
+      // Very subtle cloud drift without revolving the earth
+      if (showClouds) {
+        cloudOffset = (cloudOffset + 0.00004) % 1.0;
       }
-      ctx.restore();
-    }
 
-    // 3h. Specular Solar Glint (Brilliant sun reflection on water surface)
-    const glintPt = project(15, 68, cx, cy, radius);
-    if (glintPt.visible) {
-      const glintGrad = ctx.createRadialGradient(
-        sunX + radius * 0.1,
-        sunY + radius * 0.1,
-        0,
-        sunX + radius * 0.1,
-        sunY + radius * 0.1,
-        radius * 0.45
-      );
-      glintGrad.addColorStop(0, 'rgba(255, 255, 255, 0.42)');
-      glintGrad.addColorStop(0.3, 'rgba(200, 235, 255, 0.12)');
-      glintGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = glintGrad;
-      ctx.beginPath();
-      ctx.arc(sunX + radius * 0.1, sunY + radius * 0.1, radius * 0.45, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // 3i. Atmospheric Limb Fresnel Darkening (Smooth edge shading on the 3D sphere)
-    const sphereRim = ctx.createRadialGradient(
-      cx,
-      cy,
-      radius * 0.72,
-      cx,
-      cy,
-      radius
-    );
-    sphereRim.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    sphereRim.addColorStop(0.7, 'rgba(0, 15, 35, 0.2)');
-    sphereRim.addColorStop(0.95, 'rgba(4, 18, 42, 0.65)');
-    sphereRim.addColorStop(1, 'rgba(40, 120, 200, 0.55)'); // Bright inner limb scattering
-    ctx.fillStyle = sphereRim;
-    ctx.fillRect(0, 0, width, height);
-
-    // 3j. Study Region Boundary Box (North Indian Ocean: 5-30°N, 45-105°E)
-    ctx.strokeStyle = '#D99B21';
-    ctx.lineWidth = 1.6;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    const bCorners = [
-      [5, 45],
-      [30, 45],
-      [30, 105],
-      [5, 105],
-      [5, 45],
-    ];
-    let bStarted = false;
-    for (let c = 0; c < bCorners.length - 1; c++) {
-      const [l1, o1] = bCorners[c];
-      const [l2, o2] = bCorners[c + 1];
-      for (let s = 0; s <= 12; s++) {
-        const clat = l1 + ((l2 - l1) * s) / 12;
-        const clon = o1 + ((o2 - o1) * s) / 12;
-        const pt = project(clat, clon, cx, cy, radius);
-        if (pt.visible) {
-          if (!bStarted) {
-            ctx.moveTo(pt.x, pt.y);
-            bStarted = true;
-          } else {
-            ctx.lineTo(pt.x, pt.y);
-          }
-        }
+      // If user explicitly enabled auto-rotate
+      if (autoRotate && !isDragging) {
+        setLambda0((prev) => (prev + 0.002) % (Math.PI * 2));
       }
-    }
-    ctx.stroke();
-    ctx.setLineDash([]);
 
-    // 3k. Active Cast Indicators (Argo Floats & Reconstructions)
-    activeCasts.forEach((cast) => {
-      const pt = project(cast.lat, cast.lon, cx, cy, radius);
-      if (!pt.visible) return;
+      animationFrameId = requestAnimationFrame(render);
+    };
 
-      const isCastActive = cast.isActive;
-      // Pulsing outer beacon circle
-      ctx.beginPath();
-      ctx.arc(pt.x, pt.y, isCastActive ? 16 : 10, 0, Math.PI * 2);
-      ctx.fillStyle = isCastActive ? 'rgba(217, 155, 33, 0.4)' : 'rgba(131, 137, 33, 0.3)';
-      ctx.fill();
+    render();
 
-      // Core dot
-      ctx.beginPath();
-      ctx.arc(pt.x, pt.y, isCastActive ? 5.5 : 4, 0, Math.PI * 2);
-      ctx.fillStyle = isCastActive ? '#D99B21' : '#FAF7BB';
-      ctx.strokeStyle = '#0a1d33';
-      ctx.lineWidth = 1.8;
-      ctx.fill();
-      ctx.stroke();
-
-      // Label Tag
-      ctx.font = isCastActive ? 'bold 11px "Space Mono"' : '10px "Space Mono"';
-      ctx.fillStyle = isCastActive ? '#FAF7BB' : 'rgba(250, 247, 187, 0.85)';
-      ctx.fillText(cast.name.split('(')[0].trim(), pt.x + 9, pt.y - 4);
-    });
-
-    // 3l. Pinned Custom Point (User dropped target beacon)
-    if (pinnedPoint) {
-      const pt = project(pinnedPoint.lat, pinnedPoint.lon, cx, cy, radius);
-      if (pt.visible) {
-        // Multi-ring radar pulse
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 20, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(217, 155, 33, 0.6)';
-        ctx.lineWidth = 1.4;
-        ctx.setLineDash([4, 4]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Target crosshair
-        ctx.beginPath();
-        ctx.moveTo(pt.x - 11, pt.y);
-        ctx.lineTo(pt.x + 11, pt.y);
-        ctx.moveTo(pt.x, pt.y - 11);
-        ctx.lineTo(pt.x, pt.y + 11);
-        ctx.strokeStyle = '#D99B21';
-        ctx.lineWidth = 1.8;
-        ctx.stroke();
-
-        // Pin center marker
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
-        ctx.fillStyle = '#FAF7BB';
-        ctx.strokeStyle = '#0a1d33';
-        ctx.lineWidth = 2.5;
-        ctx.fill();
-        ctx.stroke();
-
-        // Floating Coordinate Tag attached to the 3D pin
-        const tagText = `${pinnedPoint.lat}°N, ${pinnedPoint.lon}°E`;
-        ctx.font = 'bold 11px "Space Mono"';
-        const textWidth = ctx.measureText(tagText).width;
-
-        ctx.fillStyle = '#0a1d33';
-        ctx.strokeStyle = '#D99B21';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        if ('roundRect' in ctx) {
-          (ctx as any).roundRect(pt.x + 12, pt.y - 22, textWidth + 16, 24, 4);
-        } else {
-          ctx.rect(pt.x + 12, pt.y - 22, textWidth + 16, 24);
-        }
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = '#FAF7BB';
-        ctx.fillText(tagText, pt.x + 20, pt.y - 6);
-      }
-    }
-
-    ctx.restore(); // End sphere clip
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
   }, [
     lambda0,
     phi0,
     scale,
-    project,
-    activeCasts,
-    pinnedPoint,
+    autoRotate,
+    isDragging,
     showSst,
     showClouds,
     showNightLights,
     showGraticules,
-    cloudOffset,
-    sunAngle,
-    stars,
+    sunDir,
   ]);
 
-  // Mouse Interaction Handlers
+  // -------------------------------------------------------------
+  // Mouse & Touch Controls
+  // -------------------------------------------------------------
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDragging(true);
     dragStartRef.current = {
@@ -935,35 +678,38 @@ export function Earth3DGlobe({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
-    const cx = canvas.clientWidth / 2;
-    const cy = canvas.clientHeight / 2;
-    const radius = Math.min(canvas.clientWidth, canvas.clientHeight) * 0.44 * scale;
-
     if (isDragging) {
       const dx = e.clientX - dragStartRef.current.x;
       const dy = e.clientY - dragStartRef.current.y;
+      const sens = 0.0045 / scale;
 
-      const sensitivity = 0.005 / scale;
-      let newLambda = dragStartRef.current.lambda - dx * sensitivity;
-      let newPhi = dragStartRef.current.phi + dy * sensitivity;
+      let nextLambda = dragStartRef.current.lambda + dx * sens;
+      while (nextLambda > Math.PI) nextLambda -= Math.PI * 2;
+      while (nextLambda < -Math.PI) nextLambda += Math.PI * 2;
 
-      newPhi = Math.max((-82 * Math.PI) / 180, Math.min((82 * Math.PI) / 180, newPhi));
+      let nextPhi = dragStartRef.current.phi - dy * sens;
+      nextPhi = Math.max(-1.4, Math.min(1.4, nextPhi));
 
-      setLambda0(newLambda);
-      setPhi0(newPhi);
+      setLambda0(nextLambda);
+      setPhi0(nextPhi);
     } else {
-      const coords = unproject(px, py, cx, cy, radius);
-      if (coords) {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const cx = canvas.clientWidth / 2;
+      const cy = canvas.clientHeight / 2;
+      const radius = (Math.min(canvas.clientWidth, canvas.clientHeight) / 2) * 0.76 * scale;
+
+      const hit = unproject(mouseX, mouseY, cx, cy, radius);
+      if (hit) {
         setHoverCoord({
-          lat: coords.lat,
-          lon: coords.lon,
-          x: px,
-          y: py,
-          sst: estimateSST(coords.lat, coords.lon),
-          region: resolveOceanRegion(coords.lat, coords.lon),
+          lat: hit.lat,
+          lon: hit.lon,
+          x: mouseX,
+          y: mouseY,
+          sst: estimateSST(hit.lat, hit.lon),
+          region: resolveOceanRegion(hit.lat, hit.lon),
         });
       } else {
         setHoverCoord(null);
@@ -978,62 +724,71 @@ export function Earth3DGlobe({
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const rect = canvas.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
     const cx = canvas.clientWidth / 2;
     const cy = canvas.clientHeight / 2;
-    const radius = Math.min(canvas.clientWidth, canvas.clientHeight) * 0.44 * scale;
+    const radius = (Math.min(canvas.clientWidth, canvas.clientHeight) / 2) * 0.76 * scale;
 
-    const coords = unproject(px, py, cx, cy, radius);
-    if (coords) {
-      const sst = estimateSST(coords.lat, coords.lon);
-      const region = resolveOceanRegion(coords.lat, coords.lon);
-      const newPin: PinnedPoint = {
-        lat: coords.lat,
-        lon: coords.lon,
+    const hit = unproject(mouseX, mouseY, cx, cy, radius);
+    if (hit) {
+      const sst = estimateSST(hit.lat, hit.lon);
+      const region = resolveOceanRegion(hit.lat, hit.lon);
+      const point: PinnedPoint = {
+        lat: hit.lat,
+        lon: hit.lon,
         sst,
         region,
+        depths: [0, 10, 20, 50, 100, 200, 500, 1000],
       };
-      setPinnedPoint(newPin);
-      onDropPin?.(newPin);
+      setPinnedPoint(point);
+      onDropPin?.(point);
     }
   };
 
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
-    setScale((prev) => {
-      const next = prev - e.deltaY * 0.001;
-      return Math.max(0.8, Math.min(2.8, next));
-    });
+    setScale((prev) => Math.max(0.65, Math.min(3.2, prev - e.deltaY * 0.0012)));
   };
 
-  const resetView = () => {
+  const resetToNorthIndianOcean = () => {
     setLambda0((68 * Math.PI) / 180);
     setPhi0((15 * Math.PI) / 180);
-    setScale(expanded ? 1.55 : compact ? 1.08 : 1.35);
+    setScale(compact && !expanded ? 1.05 : 1.35);
   };
 
-  const copyCoordinates = () => {
+  const copyCoords = () => {
     if (!pinnedPoint) return;
     navigator.clipboard.writeText(`${pinnedPoint.lat}, ${pinnedPoint.lon}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Dimensions for overlay pin calculations
+  const canvas = canvasRef.current;
+  const width = canvas ? canvas.clientWidth : 800;
+  const height = canvas ? canvas.clientHeight : 500;
+  const cx = width / 2;
+  const cy = height / 2;
+  const radius = (Math.min(width, height) / 2) * 0.76 * scale;
+
+  // Screen positions for overlay elements
+  const pinnedScreen = pinnedPoint ? project(pinnedPoint.lat, pinnedPoint.lon, cx, cy, radius) : null;
+
   return (
     <div
       ref={containerRef}
-      className={`relative w-full overflow-hidden border border-[#294966] bg-[#050d1a] select-none transition-all duration-300 ${
+      className={`relative w-full overflow-hidden border border-[#294966] bg-[#030a14] select-none transition-all duration-300 ${
         expanded
           ? 'h-[640px] sm:h-[720px]'
           : compact
-          ? 'h-[460px] sm:h-[540px]'
-          : 'h-[540px] sm:h-[640px]'
+          ? 'h-[480px] sm:h-[550px]'
+          : 'h-[560px] sm:h-[650px]'
       }`}
     >
-      {/* 3D Canvas Viewport */}
+      {/* 1. Photorealistic WebGL 3D Earth Canvas */}
       <canvas
         ref={canvasRef}
         className="h-full w-full cursor-grab active:cursor-grabbing"
@@ -1048,202 +803,337 @@ export function Earth3DGlobe({
         onWheel={handleWheel}
       />
 
-      {/* Top Banner: Domain Info & Mission Kicker */}
+      {/* 2. Interactive SVG Pin Overlay (Active Runs & Pinned Coordinates) */}
+      <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-hidden">
+        {/* Active Cast Markers */}
+        {activeCasts.map((cast) => {
+          const pt = project(cast.lat, cast.lon, cx, cy, radius);
+          if (!pt.visible) return null;
+          return (
+            <g
+              key={cast.id}
+              className="pointer-events-auto cursor-pointer"
+              onClick={() => onSelectCast?.(cast.name)}
+            >
+              <circle
+                cx={pt.x}
+                cy={pt.y}
+                r={cast.isActive ? 7 : 4.5}
+                fill={cast.isActive ? '#D99B21' : '#20a39e'}
+                stroke="#FAF7BB"
+                strokeWidth={1.5}
+              />
+              {cast.isActive && (
+                <circle
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={14}
+                  fill="none"
+                  stroke="#D99B21"
+                  strokeWidth={1.5}
+                  className="animate-ping"
+                  opacity={0.7}
+                />
+              )}
+            </g>
+          );
+        })}
+
+        {/* Selected / Pinned Location Marker */}
+        {pinnedScreen && pinnedScreen.visible && (
+          <g className="pointer-events-none">
+            {/* Pulsing Target Radar Rings */}
+            <circle
+              cx={pinnedScreen.x}
+              cy={pinnedScreen.y}
+              r={18}
+              fill="none"
+              stroke="#D99B21"
+              strokeWidth={1.2}
+              strokeDasharray="3 3"
+              className="animate-spin"
+              style={{ animationDuration: '6s' }}
+            />
+            <circle
+              cx={pinnedScreen.x}
+              cy={pinnedScreen.y}
+              r={28}
+              fill="none"
+              stroke="#D99B21"
+              strokeWidth={1}
+              opacity={0.4}
+              className="animate-pulse"
+            />
+            {/* Crosshairs */}
+            <line
+              x1={pinnedScreen.x - 12}
+              y1={pinnedScreen.y}
+              x2={pinnedScreen.x + 12}
+              y2={pinnedScreen.y}
+              stroke="#FAF7BB"
+              strokeWidth={1.5}
+            />
+            <line
+              x1={pinnedScreen.x}
+              y1={pinnedScreen.y - 12}
+              x2={pinnedScreen.x}
+              y2={pinnedScreen.y + 12}
+              stroke="#FAF7BB"
+              strokeWidth={1.5}
+            />
+            {/* Core Pin */}
+            <circle
+              cx={pinnedScreen.x}
+              cy={pinnedScreen.y}
+              r={4}
+              fill="#D99B21"
+              stroke="#FAF7BB"
+              strokeWidth={2}
+            />
+          </g>
+        )}
+      </svg>
+
+      {/* 3. Top Banner: Mission Kicker & Domain */}
       <div className="absolute left-4 top-4 flex flex-wrap items-center gap-2 border border-[#FAF7BB]/15 bg-[#0a1d33]/85 px-3 py-1.5 text-[10px] text-[#FAF7BB]/90 backdrop-blur rounded-sm shadow-md">
-        <span className="h-2 w-2 rounded-full bg-[#D99B21] animate-pulse" />
-        <span className="font-semibold tracking-wider uppercase font-data">Hyperrealistic 3D Earth</span>
+        <span className="h-2 w-2 rounded-full bg-[#20a39e]" />
+        <span className="font-semibold tracking-wider uppercase font-data">Satellite Photorealistic 3D Earth</span>
         <span className="font-data text-[#FAF7BB]/45 hidden sm:inline">· North Indian Ocean (5–30°N, 45–105°E)</span>
       </div>
 
-      {/* Top Layer Toggles (SST, Clouds, Night Lights, Graticule) */}
-      <div className="absolute left-4 top-13 flex flex-wrap items-center gap-1.5 border border-[#FAF7BB]/10 bg-[#0a1d33]/75 p-1 backdrop-blur rounded-sm shadow-md">
+      {/* 4. Top-Right: Photorealistic Layer Toggles */}
+      <div className="absolute right-4 top-4 flex flex-wrap items-center gap-1.5">
         <button
           type="button"
-          onClick={() => setShowSst((v) => !v)}
-          className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold font-data rounded-xs transition-colors ${
-            showSst ? 'bg-[#D99B21] text-[#0a1d33]' : 'text-[#FAF7BB]/70 hover:bg-[#FAF7BB]/10 hover:text-[#FAF7BB]'
+          onClick={() => setShowSst((prev) => !prev)}
+          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-sm border transition-all ${
+            showSst
+              ? 'border-[#D99B21] bg-[#D99B21]/20 text-[#FAF7BB] shadow-sm'
+              : 'border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB]/60 hover:text-[#FAF7BB]'
           }`}
-          title="Toggle Sea Surface Temperature Heatmap"
+          title="Toggle Satellite Sea Surface Temperature Thermal Overlay"
         >
-          <Flame size={11} /> SST
+          <Flame size={12} className={showSst ? 'text-[#D99B21]' : ''} />
+          <span>SST Heat</span>
         </button>
-        <button
-          type="button"
-          onClick={() => setShowClouds((v) => !v)}
-          className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold font-data rounded-xs transition-colors ${
-            showClouds ? 'bg-[#38bdf8] text-[#0a1d33]' : 'text-[#FAF7BB]/70 hover:bg-[#FAF7BB]/10 hover:text-[#FAF7BB]'
-          }`}
-          title="Toggle Dynamic Weather Clouds"
-        >
-          <Cloud size={11} /> Clouds
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowNightLights((v) => !v)}
-          className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold font-data rounded-xs transition-colors ${
-            showNightLights ? 'bg-[#fef08a] text-[#0a1d33]' : 'text-[#FAF7BB]/70 hover:bg-[#FAF7BB]/10 hover:text-[#FAF7BB]'
-          }`}
-          title="Toggle City Night Lights"
-        >
-          <Moon size={11} /> Lights
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowGraticules((v) => !v)}
-          className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold font-data rounded-xs transition-colors ${
-            showGraticules ? 'bg-[#FAF7BB]/20 text-[#FAF7BB]' : 'text-[#FAF7BB]/60 hover:bg-[#FAF7BB]/10'
-          }`}
-          title="Toggle Coordinate Graticule Grid"
-        >
-          <Grid size={11} /> Grid
-        </button>
-      </div>
 
-      {/* Floating Control Toolbar */}
-      <div className="absolute right-4 top-4 flex flex-col gap-1.5 border border-[#FAF7BB]/15 bg-[#0a1d33]/85 p-1 backdrop-blur rounded-sm shadow-xl">
+        <button
+          type="button"
+          onClick={() => setShowClouds((prev) => !prev)}
+          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-sm border transition-all ${
+            showClouds
+              ? 'border-[#38bdf8] bg-[#38bdf8]/20 text-[#FAF7BB] shadow-sm'
+              : 'border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB]/60 hover:text-[#FAF7BB]'
+          }`}
+          title="Toggle Dynamic Atmospheric Clouds"
+        >
+          <Cloud size={12} className={showClouds ? 'text-[#38bdf8]' : ''} />
+          <span>Clouds</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowNightLights((prev) => !prev)}
+          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-sm border transition-all ${
+            showNightLights
+              ? 'border-[#fbbf24] bg-[#fbbf24]/20 text-[#FAF7BB] shadow-sm'
+              : 'border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB]/60 hover:text-[#FAF7BB]'
+          }`}
+          title="Toggle Nocturnal City Lights"
+        >
+          <Sun size={12} className={showNightLights ? 'text-[#fbbf24]' : ''} />
+          <span>City Lights</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowGraticules((prev) => !prev)}
+          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-sm border transition-all ${
+            showGraticules
+              ? 'border-[#20a39e] bg-[#20a39e]/20 text-[#FAF7BB] shadow-sm'
+              : 'border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB]/60 hover:text-[#FAF7BB]'
+          }`}
+          title="Toggle Graticule Grid"
+        >
+          <Grid size={12} className={showGraticules ? 'text-[#20a39e]' : ''} />
+          <span>Grid</span>
+        </button>
+
         {onToggleExpand && (
           <button
             type="button"
             onClick={onToggleExpand}
-            title={expanded ? 'Compress View' : 'Expand Globe to Full Width'}
-            className="p-1.5 text-[#D99B21] hover:bg-[#FAF7BB]/15 transition-colors rounded-sm"
+            className="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded-sm border border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB]/80 hover:text-[#FAF7BB] transition-all ml-1"
+            title={expanded ? 'Minimize view' : 'Maximize full-width'}
           >
-            {expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
           </button>
         )}
+      </div>
+
+      {/* 5. Left Floating HUD: Live Lat/Lon Raycast Info */}
+      <div className="absolute left-4 bottom-4 flex flex-col gap-2 max-w-[280px]">
+        {hoverCoord && (
+          <div className="border border-[#FAF7BB]/20 bg-[#0a1d33]/90 p-2 text-xs text-[#FAF7BB] backdrop-blur rounded-sm shadow-lg pointer-events-none animate-in fade-in duration-150">
+            <div className="flex items-center gap-1.5 font-data text-[10px] text-[#20a39e]">
+              <Crosshair size={11} className="animate-spin" style={{ animationDuration: '4s' }} />
+              <span>LIVE RAYCAST</span>
+            </div>
+            <div className="mt-1 font-bold text-sm font-data text-[#FAF7BB]">
+              {hoverCoord.lat > 0 ? `${hoverCoord.lat}°N` : `${Math.abs(hoverCoord.lat)}°S`},{' '}
+              {hoverCoord.lon > 0 ? `${hoverCoord.lon}°E` : `${Math.abs(hoverCoord.lon)}°W`}
+            </div>
+            <div className="mt-0.5 text-[11px] text-[#FAF7BB]/70 font-medium truncate">
+              {hoverCoord.region}
+            </div>
+            <div className="mt-1 flex items-center justify-between text-[10px] font-data text-[#FAF7BB]/60 border-t border-[#FAF7BB]/10 pt-1">
+              <span>EST. SST: <strong className="text-[#D99B21]">{hoverCoord.sst}°C</strong></span>
+              <span className="text-[#FAF7BB]/40">Click to pin</span>
+            </div>
+          </div>
+        )}
+
+        {/* SST Thermal Legend Bar */}
+        {showSst && (
+          <div className="border border-[#FAF7BB]/15 bg-[#0a1d33]/85 p-2 rounded-sm backdrop-blur text-[10px] text-[#FAF7BB]/80 shadow-md">
+            <div className="flex items-center justify-between font-data font-semibold text-[9px] mb-1">
+              <span className="text-[#38bdf8]">22°C (Min)</span>
+              <span className="text-[#FAF7BB]/60">SST Gradient</span>
+              <span className="text-[#ef4444]">30°C (Max)</span>
+            </div>
+            <div
+              className="h-2 w-full rounded-sm shadow-inner"
+              style={{
+                background:
+                  'linear-gradient(to right, #001080 0%, #0088ff 25%, #00ff88 50%, #ffee00 75%, #ff2200 100%)',
+              }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* 6. Right Floating Panel: Pinned Coordinates Card */}
+      {pinnedPoint && (
+        <div className="absolute right-4 bottom-4 w-72 sm:w-80 border border-[#D99B21]/50 bg-[#0a1d33]/95 p-3.5 text-xs text-[#FAF7BB] backdrop-blur rounded-sm shadow-2xl animate-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-center justify-between border-b border-[#FAF7BB]/15 pb-2">
+            <div className="flex items-center gap-1.5 font-bold text-[#D99B21]">
+              <MapPin size={14} />
+              <span className="text-xs uppercase tracking-wide">Target Selected</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={copyCoords}
+                className="p-1 rounded hover:bg-[#FAF7BB]/10 text-[#FAF7BB]/70 hover:text-[#FAF7BB]"
+                title="Copy coordinates"
+              >
+                {copied ? <Check size={13} className="text-[#20a39e]" /> : <Copy size={13} />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPinnedPoint(null)}
+                className="p-1 rounded hover:bg-[#FAF7BB]/10 text-[#FAF7BB]/70 hover:text-[#FAF7BB]"
+                title="Close"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-2.5">
+            <div className="font-data text-lg font-bold text-[#FAF7BB]">
+              {pinnedPoint.lat > 0 ? `${pinnedPoint.lat}°N` : `${Math.abs(pinnedPoint.lat)}°S`},{' '}
+              {pinnedPoint.lon > 0 ? `${pinnedPoint.lon}°E` : `${Math.abs(pinnedPoint.lon)}°W`}
+            </div>
+            <p className="mt-0.5 text-xs text-[#20a39e] font-medium">{pinnedPoint.region}</p>
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-2 border-y border-[#FAF7BB]/10 py-2 font-data text-[11px]">
+            <div>
+              <span className="text-[#FAF7BB]/60 block text-[9px] uppercase">Sea Surface Temp</span>
+              <strong className="text-sm font-bold text-[#D99B21]">{pinnedPoint.sst}°C</strong>
+            </div>
+            <div>
+              <span className="text-[#FAF7BB]/60 block text-[9px] uppercase">Domain Coverage</span>
+              <strong className="text-sm font-bold text-[#FAF7BB]">
+                {pinnedPoint.lat >= 5 &&
+                pinnedPoint.lat <= 30 &&
+                pinnedPoint.lon >= 45 &&
+                pinnedPoint.lon <= 105
+                  ? 'In Domain'
+                  : 'Outer'}
+              </strong>
+            </div>
+          </div>
+
+          {/* Depth Levels */}
+          <div className="mt-2.5">
+            <div className="text-[10px] text-[#FAF7BB]/60 uppercase font-data mb-1">
+              Target Depth Levels (8 levels to 1000m)
+            </div>
+            <div className="flex flex-wrap gap-1 font-data text-[9px]">
+              {pinnedPoint.depths?.map((d) => (
+                <span key={d} className="bg-[#FAF7BB]/10 px-1.5 py-0.5 rounded text-[#FAF7BB]/90">
+                  {d}m
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Action Button: Reconstruct Here */}
+          <button
+            type="button"
+            onClick={() => onLaunchReconstruction?.(pinnedPoint.lat, pinnedPoint.lon, pinnedPoint.sst)}
+            className="mt-3.5 w-full flex items-center justify-center gap-2 rounded-sm bg-[#D99B21] py-2 px-3 text-xs font-bold text-[#133458] hover:bg-[#e8aa2a] transition-all shadow-md active:scale-[0.98]"
+          >
+            <Sparkles size={14} /> Reconstruct Here
+          </button>
+        </div>
+      )}
+
+      {/* 7. Bottom Navigation & Orientation Controls */}
+      <div className="absolute right-4 bottom-4 flex flex-col gap-1.5 z-10">
         <button
           type="button"
-          onClick={() => setScale((s) => Math.min(2.8, s + 0.18))}
+          onClick={() => setScale((s) => Math.min(3.2, s * 1.2))}
+          className="flex h-7 w-7 items-center justify-center rounded-sm border border-[#FAF7BB]/20 bg-[#0a1d33]/90 text-[#FAF7BB] hover:bg-[#0a1d33] transition-colors shadow-md"
           title="Zoom In"
-          className="p-1.5 text-[#FAF7BB]/70 hover:bg-[#FAF7BB]/15 hover:text-[#FAF7BB] transition-colors rounded-sm"
         >
-          <ZoomIn size={15} />
+          <ZoomIn size={14} />
         </button>
         <button
           type="button"
-          onClick={() => setScale((s) => Math.max(0.8, s - 0.18))}
+          onClick={() => setScale((s) => Math.max(0.65, s / 1.2))}
+          className="flex h-7 w-7 items-center justify-center rounded-sm border border-[#FAF7BB]/20 bg-[#0a1d33]/90 text-[#FAF7BB] hover:bg-[#0a1d33] transition-colors shadow-md"
           title="Zoom Out"
-          className="p-1.5 text-[#FAF7BB]/70 hover:bg-[#FAF7BB]/15 hover:text-[#FAF7BB] transition-colors rounded-sm"
         >
-          <ZoomOut size={15} />
+          <ZoomOut size={14} />
         </button>
         <button
           type="button"
-          onClick={resetView}
-          title="Center North Indian Ocean (15°N, 68°E)"
-          className="p-1.5 text-[#FAF7BB]/70 hover:bg-[#FAF7BB]/15 hover:text-[#FAF7BB] transition-colors rounded-sm"
+          onClick={resetToNorthIndianOcean}
+          className="flex h-7 w-7 items-center justify-center rounded-sm border border-[#FAF7BB]/20 bg-[#0a1d33]/90 text-[#FAF7BB] hover:bg-[#0a1d33] transition-colors shadow-md"
+          title="Reset to North Indian Ocean"
         >
-          <Compass size={15} />
+          <Compass size={14} />
         </button>
         <button
           type="button"
           onClick={() => setAutoRotate((r) => !r)}
-          title={autoRotate ? 'Pause Rotation' : 'Auto Rotate'}
-          className={`p-1.5 transition-colors rounded-sm ${
-            autoRotate ? 'text-[#D99B21] bg-[#FAF7BB]/10' : 'text-[#FAF7BB]/70 hover:bg-[#FAF7BB]/15 hover:text-[#FAF7BB]'
+          className={`flex h-7 w-7 items-center justify-center rounded-sm border transition-colors shadow-md ${
+            autoRotate
+              ? 'border-[#D99B21] bg-[#D99B21]/30 text-[#FAF7BB]'
+              : 'border-[#FAF7BB]/20 bg-[#0a1d33]/90 text-[#FAF7BB]/70 hover:text-[#FAF7BB]'
           }`}
+          title={autoRotate ? 'Pause Earth Revolution' : 'Start Earth Revolution'}
         >
-          {autoRotate ? <Pause size={15} /> : <Play size={15} />}
+          {autoRotate ? <Pause size={13} /> : <Play size={13} />}
         </button>
       </div>
 
-      {/* Live Coordinate Cursor Hover HUD */}
-      {hoverCoord && !isDragging && (
-        <div className="pointer-events-none absolute left-4 bottom-14 flex items-center gap-2 border border-[#D99B21]/50 bg-[#0a1d33]/92 px-3.5 py-1.5 text-xs text-[#FAF7BB] backdrop-blur rounded-sm shadow-2xl font-data">
-          <Crosshair size={13} className="text-[#D99B21]" />
-          <span>
-            Lat: <strong className="text-[#FAF7BB]">{hoverCoord.lat}°N</strong>, Lon:{' '}
-            <strong className="text-[#FAF7BB]">{hoverCoord.lon}°E</strong>
-          </span>
-          <span className="text-[#FAF7BB]/40">·</span>
-          <span className="text-[#FAF7BB]/80 truncate max-w-[150px]">{hoverCoord.region}</span>
-          <span className="text-[#FAF7BB]/40">·</span>
-          <span className="text-[#D99B21] font-bold">~{hoverCoord.sst}°C</span>
-        </div>
-      )}
-
-      {/* Interactive Pinned Point Details Popover Card */}
-      {pinnedPoint && (
-        <div className="absolute right-4 bottom-4 z-20 w-80 rounded-sm border border-[#D99B21]/60 bg-[#0a1d33]/96 p-4 text-[#FAF7BB] shadow-2xl backdrop-blur animate-rise">
-          <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-[#FAF7BB]/15">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#D99B21]">
-              <MapPin size={15} />
-              <span>Target Point Coordinates</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setPinnedPoint(null)}
-              className="text-[#FAF7BB]/50 hover:text-[#FAF7BB] transition-colors p-0.5"
-              title="Clear selection"
-            >
-              <X size={14} />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 mb-3 font-data">
-            <div className="rounded bg-[#FAF7BB]/10 p-2.5">
-              <span className="block text-[9px] uppercase tracking-wider text-[#FAF7BB]/60">Latitude</span>
-              <span className="text-base font-bold text-[#FAF7BB]">{pinnedPoint.lat}°N</span>
-            </div>
-            <div className="rounded bg-[#FAF7BB]/10 p-2.5">
-              <span className="block text-[9px] uppercase tracking-wider text-[#FAF7BB]/60">Longitude</span>
-              <span className="text-base font-bold text-[#FAF7BB]">{pinnedPoint.lon}°E</span>
-            </div>
-          </div>
-
-          <div className="space-y-1.5 text-xs mb-3.5">
-            <div className="flex justify-between text-[#FAF7BB]/80">
-              <span>Basin / Sector:</span>
-              <strong className="text-[#FAF7BB] truncate max-w-[180px] text-right font-medium">
-                {pinnedPoint.region}
-              </strong>
-            </div>
-            <div className="flex justify-between items-center text-[#FAF7BB]/80">
-              <span className="flex items-center gap-1">
-                <Flame size={13} className="text-[#D99B21]" /> Satellite Surface Temp:
-              </span>
-              <strong className="text-[#D99B21] font-data font-bold text-sm">{pinnedPoint.sst}°C</strong>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => onLaunchReconstruction?.(pinnedPoint.lat, pinnedPoint.lon, pinnedPoint.sst)}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-sm bg-[#D99B21] hover:bg-[#b88015] px-3 py-2 text-xs font-bold text-[#0a1d33] transition-colors shadow-sm"
-            >
-              <Sparkles size={14} /> Reconstruct Here
-            </button>
-            <button
-              type="button"
-              onClick={copyCoordinates}
-              className="rounded-sm border border-[#FAF7BB]/25 px-2.5 py-2 text-xs text-[#FAF7BB] hover:bg-[#FAF7BB]/15 transition-colors"
-              title="Copy coordinates"
-            >
-              {copied ? <Check size={15} className="text-[#838921]" /> : <Copy size={15} />}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Bottom Bar: Instructions & Colorbar Scale */}
-      <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between pointer-events-none">
-        <div className="text-[10px] text-[#FAF7BB]/65 hidden sm:block pointer-events-auto bg-[#0a1d33]/70 px-3 py-1.5 rounded-sm border border-[#FAF7BB]/10 backdrop-blur">
-          <div>• Drag to rotate 360° · Scroll wheel to zoom</div>
-          <div>• Click anywhere on 3D Earth to drop pin & inspect Lat/Lon</div>
-        </div>
-
-        {/* Satellite SST Colorbar Legend (22°C to 30°C) matching media_1790144942227.jpg */}
-        {showSst && (
-          <div className="w-56 pointer-events-auto bg-[#0a1d33]/85 p-2 rounded-sm border border-[#FAF7BB]/15 backdrop-blur shadow-lg">
-            <div className="mb-1 flex justify-between font-data text-[9px] text-[#FAF7BB]/85 font-semibold">
-              <span>22°C (Upwelling)</span>
-              <span>SST Colormap</span>
-              <span>30°C (Warm Pool)</span>
-            </div>
-            <div className="h-2.5 rounded-sm bg-gradient-to-r from-[#1940ff] via-[#00e1ff] via-[#4dff00] via-[#ffff00] via-[#ff7700] to-[#e60000]" />
-          </div>
-        )}
+      {/* Center Drag Hint if idle */}
+      <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] text-[#FAF7BB]/40 font-data hidden sm:block">
+        Click & drag to rotate · Scroll to zoom · Click to drop pin
       </div>
     </div>
   );
