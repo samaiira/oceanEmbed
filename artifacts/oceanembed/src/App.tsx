@@ -4,7 +4,7 @@ import { Link, Redirect, Route, Switch, useLocation, Router as WouterRouter } fr
 import {
   Activity, ArrowDownRight, ArrowRight, Bell, Check, ChevronDown,
   CircleHelp, Cloud, Database, Download, FileText,
-  Gauge, Globe, Globe2, Layers3, Map, Menu, MoreHorizontal, Mountain,
+  Gauge, Globe, Globe2, Layers3, Map, Maximize2, Menu, Minimize2, MoreHorizontal, Mountain,
   Network, Play, Plus, RotateCcw, Search, Settings2, SlidersHorizontal,
   Sparkles, Thermometer, TrendingUp, Waves, X
 } from 'lucide-react';
@@ -578,6 +578,7 @@ function Dashboard() {
   const [selected, setSelected] = useState(activeRun?.name || 'Arabian Sea');
   const [mapMode, setMapMode] = useState<'3d' | '2d'>('3d');
   const [pickedPoint, setPickedPoint] = useState<PinnedPoint | null>(null);
+  const [isGlobeExpanded, setIsGlobeExpanded] = useState(false);
   const { user, profile, userId } = useSupabaseAuth();
   const [copied, setCopied] = useState(false);
 
@@ -652,8 +653,8 @@ function Dashboard() {
           <StatCard label="Measurements" value="141,433" note="January 2023 study period" icon={Database} />
           <StatCard label="Total Floats" value="228" note="183 train · 45 test (80/20)" icon={Sparkles} />
         </div>
-        <div className="mt-5 grid gap-5 xl:grid-cols-[1.55fr_1fr]">
-          <section className="oe-card p-4 sm:p-5">
+        <div className={`mt-5 grid gap-5 ${isGlobeExpanded ? 'grid-cols-1' : 'xl:grid-cols-[2.2fr_1fr]'}`}>
+          <section className={`oe-card p-4 sm:p-5 transition-all duration-300 ${isGlobeExpanded ? 'col-span-full' : ''}`}>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="oe-kicker mb-1">Surface field</div>
@@ -685,6 +686,18 @@ function Dashboard() {
                     <Map size={13} /> 2D Map
                   </button>
                 </div>
+
+                {/* Expand / Minimize Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setIsGlobeExpanded((prev) => !prev)}
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-sm border border-[#D8D0B3] bg-[#FAF7BB] text-[#133458] hover:bg-[#eae4a4] transition-all"
+                  title={isGlobeExpanded ? 'Normal view' : 'Expand full width'}
+                >
+                  {isGlobeExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                  <span>{isGlobeExpanded ? 'Collapse' : 'Expand'}</span>
+                </button>
+
                 <Link href="/map" className="flex items-center gap-1 text-xs font-semibold text-[#838921] hover:text-[#133458]" data-testid="link-open-full-map">
                   Open full map <ArrowRight size={14} />
                 </Link>
@@ -693,7 +706,9 @@ function Dashboard() {
 
             {mapMode === '3d' ? (
               <Earth3DGlobe
-                compact
+                compact={!isGlobeExpanded}
+                expanded={isGlobeExpanded}
+                onToggleExpand={() => setIsGlobeExpanded((prev) => !prev)}
                 activeCasts={runs.map((r) => ({
                   id: r.id,
                   name: r.name,
