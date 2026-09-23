@@ -817,6 +817,26 @@ export function Earth3DGlobe({
     }
   };
 
+  // Scroll to zoom handler (non-passive to prevent browser jump)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setScale((prev) => {
+        const next = Math.max(0.65, Math.min(3.2, prev - e.deltaY * 0.0012));
+        scaleRef.current = next;
+        return next;
+      });
+    };
+
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      canvas.removeEventListener('wheel', onWheel);
+    };
+  }, []);
+
   const resetToNorthIndianOcean = () => {
     const l0 = (68 * Math.PI) / 180;
     const p0 = (15 * Math.PI) / 180;
@@ -1187,7 +1207,7 @@ export function Earth3DGlobe({
 
       {/* Center Drag Hint if idle */}
       <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] text-[#FAF7BB]/40 font-data hidden sm:block">
-        Drag to rotate · Hover & click inside Indian Ocean to pin
+        Drag to rotate · Scroll to zoom · Hover & click inside Indian Ocean to pin
       </div>
     </div>
   );
