@@ -578,7 +578,6 @@ function Dashboard() {
   const [selected, setSelected] = useState(activeRun?.name || 'Arabian Sea');
   const [mapMode, setMapMode] = useState<'3d' | '2d'>('3d');
   const [pickedPoint, setPickedPoint] = useState<PinnedPoint | null>(null);
-  const [isGlobeExpanded, setIsGlobeExpanded] = useState(false);
   const { user, profile, userId } = useSupabaseAuth();
   const [copied, setCopied] = useState(false);
 
@@ -653,104 +652,94 @@ function Dashboard() {
           <StatCard label="Measurements" value="141,433" note="January 2023 study period" icon={Database} />
           <StatCard label="Total Floats" value="228" note="183 train · 45 test (80/20)" icon={Sparkles} />
         </div>
-        <div className={`mt-5 grid gap-5 ${isGlobeExpanded ? 'grid-cols-1' : 'xl:grid-cols-[2.2fr_1fr]'}`}>
-          <section className={`oe-card p-4 sm:p-5 transition-all duration-300 ${isGlobeExpanded ? 'col-span-full' : ''}`}>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="oe-kicker mb-1">Surface field</div>
-                <h2 className="font-display text-2xl text-[#133458]">Where the model is looking</h2>
-              </div>
-              <div className="flex items-center gap-3">
-                {/* 3D Earth vs 2D Map Toggle */}
-                <div className="flex rounded-sm border border-[#D8D0B3] bg-[#FAF7BB] p-0.5 text-xs font-semibold text-[#133458]">
-                  <button
-                    type="button"
-                    onClick={() => setMapMode('3d')}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-sm transition-all ${
-                      mapMode === '3d'
-                        ? 'bg-[#133458] text-[#FAF7BB] shadow-sm'
-                        : 'text-[#536675] hover:text-[#133458]'
-                    }`}
-                  >
-                    <Globe size={13} /> 3D Earth
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMapMode('2d')}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-sm transition-all ${
-                      mapMode === '2d'
-                        ? 'bg-[#133458] text-[#FAF7BB] shadow-sm'
-                        : 'text-[#536675] hover:text-[#133458]'
-                    }`}
-                  >
-                    <Map size={13} /> 2D Map
-                  </button>
-                </div>
-
-                {/* Expand / Minimize Toggle */}
+        {/* Full Screen 3D Earth Section (Permanent Full-Width Hero) */}
+        <section className="oe-card p-4 sm:p-5 mt-5 w-full shadow-lg border border-[#294966]/40">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="oe-kicker mb-1">Surface field</div>
+              <h2 className="font-display text-2xl text-[#133458]">Where the model is looking</h2>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* 3D Earth vs 2D Map Toggle */}
+              <div className="flex rounded-sm border border-[#D8D0B3] bg-[#FAF7BB] p-0.5 text-xs font-semibold text-[#133458]">
                 <button
                   type="button"
-                  onClick={() => setIsGlobeExpanded((prev) => !prev)}
-                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-sm border border-[#D8D0B3] bg-[#FAF7BB] text-[#133458] hover:bg-[#eae4a4] transition-all"
-                  title={isGlobeExpanded ? 'Normal view' : 'Expand full width'}
+                  onClick={() => setMapMode('3d')}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-sm transition-all ${
+                    mapMode === '3d'
+                      ? 'bg-[#133458] text-[#FAF7BB] shadow-sm'
+                      : 'text-[#536675] hover:text-[#133458]'
+                  }`}
                 >
-                  {isGlobeExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-                  <span>{isGlobeExpanded ? 'Collapse' : 'Expand'}</span>
+                  <Globe size={13} /> 3D Earth
                 </button>
-
-                <Link href="/map" className="flex items-center gap-1 text-xs font-semibold text-[#838921] hover:text-[#133458]" data-testid="link-open-full-map">
-                  Open full map <ArrowRight size={14} />
-                </Link>
+                <button
+                  type="button"
+                  onClick={() => setMapMode('2d')}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-sm transition-all ${
+                    mapMode === '2d'
+                      ? 'bg-[#133458] text-[#FAF7BB] shadow-sm'
+                      : 'text-[#536675] hover:text-[#133458]'
+                  }`}
+                >
+                  <Map size={13} /> 2D Map
+                </button>
               </div>
-            </div>
 
-            {mapMode === '3d' ? (
-              <Earth3DGlobe
-                compact={!isGlobeExpanded}
-                expanded={isGlobeExpanded}
-                onToggleExpand={() => setIsGlobeExpanded((prev) => !prev)}
-                activeCasts={runs.map((r) => ({
-                  id: r.id,
-                  name: r.name,
-                  lat: r.latitude,
-                  lon: r.longitude,
-                  sst: r.sst,
-                  rmse: r.rmse,
-                  isActive: r.id === activeRun?.id,
-                }))}
-                onSelectCast={(name) => {
-                  const found = runs.find((r) => r.name === name);
-                  if (found) {
-                    setActiveRun(found);
-                    setSelected(found.name);
-                  }
-                }}
-                onDropPin={(point) => {
-                  setPickedPoint(point);
-                }}
-                onLaunchReconstruction={(lat, lon, sst) => {
-                  openWithCoordinates(lat, lon, sst);
-                }}
-              />
-            ) : (
-              <OceanMap compact onSelect={setSelected} />
-            )}
-
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#536675]">
-              <span>
-                {pickedPoint ? (
-                  <>
-                    Point selected: <strong className="text-[#133458] font-data font-bold">{pickedPoint.lat}°N, {pickedPoint.lon}°E</strong> ({pickedPoint.region} · Est. SST {pickedPoint.sst}°C)
-                  </>
-                ) : (
-                  <>
-                    Active cast: <strong className="text-[#133458]">{activeRun.name}</strong> ({activeRun.latitude}°N, {activeRun.longitude}°E)
-                  </>
-                )}
-              </span>
-              <span className="font-data text-[10px]">{studyBounds}</span>
+              <Link href="/map" className="flex items-center gap-1 text-xs font-semibold text-[#838921] hover:text-[#133458]" data-testid="link-open-full-map">
+                Open full map <ArrowRight size={14} />
+              </Link>
             </div>
-          </section>
+          </div>
+
+          {mapMode === '3d' ? (
+            <Earth3DGlobe
+              expanded={true}
+              activeCasts={runs.map((r) => ({
+                id: r.id,
+                name: r.name,
+                lat: r.latitude,
+                lon: r.longitude,
+                sst: r.sst,
+                rmse: r.rmse,
+                isActive: r.id === activeRun?.id,
+              }))}
+              onSelectCast={(name) => {
+                const found = runs.find((r) => r.name === name);
+                if (found) {
+                  setActiveRun(found);
+                  setSelected(found.name);
+                }
+              }}
+              onDropPin={(point) => {
+                setPickedPoint(point);
+              }}
+              onLaunchReconstruction={(lat, lon, sst) => {
+                openWithCoordinates(lat, lon, sst);
+              }}
+            />
+          ) : (
+            <OceanMap onSelect={setSelected} />
+          )}
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#536675]">
+            <span>
+              {pickedPoint ? (
+                <>
+                  Point selected: <strong className="text-[#133458] font-data font-bold">{pickedPoint.lat}°N, {pickedPoint.lon}°E</strong> ({pickedPoint.region} · Est. SST {pickedPoint.sst}°C)
+                </>
+              ) : (
+                <>
+                  Active cast: <strong className="text-[#133458]">{activeRun.name}</strong> ({activeRun.latitude}°N, {activeRun.longitude}°E)
+                </>
+              )}
+            </span>
+            <span className="font-data text-[10px]">{studyBounds}</span>
+          </div>
+        </section>
+
+        {/* Analytics & Field Notes Row (3-Column Row directly below 3D Earth) */}
+        <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_1fr_1fr]">
           <section className="oe-card p-5">
             <div className="oe-kicker mb-1">At a glance</div>
             <div className="flex items-center justify-between">
@@ -784,8 +773,7 @@ function Dashboard() {
               View full reconstruction studio <ArrowRight size={14} />
             </Link>
           </section>
-        </div>
-        <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1fr]">
+
           <section className="oe-card p-5">
             <div className="mb-5 flex items-start justify-between">
               <div>
@@ -802,6 +790,7 @@ function Dashboard() {
               <span>0.242°C</span><span>Overall Test RMSE 0.554°C</span><span>0.856°C</span>
             </div>
           </section>
+
           <section className="oe-card p-5">
             <div className="mb-5 flex items-start justify-between">
               <div>

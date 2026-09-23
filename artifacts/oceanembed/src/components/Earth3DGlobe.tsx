@@ -424,7 +424,24 @@ export function Earth3DGlobe({
   // Orientation State: centered on North Indian Ocean (15°N, 68°E)
   const [lambda0, setLambda0] = useState<number>((68 * Math.PI) / 180);
   const [phi0, setPhi0] = useState<number>((15 * Math.PI) / 180);
-  const [scale, setScale] = useState<number>(compact && !expanded ? 1.05 : 1.35);
+  const [scale, setScale] = useState<number>(1.30);
+  const [isMonitorFullscreen, setIsMonitorFullscreen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsMonitorFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleMonitorFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  };
 
   // USER REQUIREMENT: Stopped revolving by default
   const [autoRotate, setAutoRotate] = useState<boolean>(false);
@@ -845,11 +862,9 @@ export function Earth3DGlobe({
     <div
       ref={containerRef}
       className={`relative w-full overflow-hidden border border-[#294966] bg-[#020712] select-none transition-all duration-300 ${
-        expanded
-          ? 'h-[640px] sm:h-[720px]'
-          : compact
-          ? 'h-[480px] sm:h-[550px]'
-          : 'h-[560px] sm:h-[650px]'
+        isMonitorFullscreen
+          ? 'h-screen w-screen'
+          : 'h-[640px] sm:h-[740px] lg:h-[820px]'
       }`}
     >
       {/* 1. Photorealistic WebGL 3D Earth Canvas (Zero-Glitch) */}
@@ -984,20 +999,18 @@ export function Earth3DGlobe({
         <span className="font-data text-[#FAF7BB]/50 hidden sm:inline">· Domain: 5–30°N, 45–105°E</span>
       </div>
 
-      {/* 4. Top-Right: Full Screen / Expand Button */}
-      {onToggleExpand && (
-        <div className="absolute right-4 top-4 flex items-center">
-          <button
-            type="button"
-            onClick={onToggleExpand}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm border border-[#FAF7BB]/25 bg-[#0a1d33]/90 text-[#FAF7BB] hover:bg-[#133458] hover:border-[#D99B21] transition-all shadow-md backdrop-blur cursor-pointer"
-            title={expanded ? 'Minimize view' : 'Maximize full-width'}
-          >
-            {expanded ? <Minimize2 size={13} className="text-[#D99B21]" /> : <Maximize2 size={13} className="text-[#D99B21]" />}
-            <span>{expanded ? 'Collapse' : 'Full Screen'}</span>
-          </button>
-        </div>
-      )}
+      {/* 4. Top-Right: Full Screen Button */}
+      <div className="absolute right-4 top-4 flex items-center">
+        <button
+          type="button"
+          onClick={toggleMonitorFullscreen}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm border border-[#FAF7BB]/25 bg-[#0a1d33]/90 text-[#FAF7BB] hover:bg-[#133458] hover:border-[#D99B21] transition-all shadow-md backdrop-blur cursor-pointer"
+          title={isMonitorFullscreen ? 'Exit full screen (Esc)' : 'Expand to full screen'}
+        >
+          {isMonitorFullscreen ? <Minimize2 size={13} className="text-[#D99B21]" /> : <Maximize2 size={13} className="text-[#D99B21]" />}
+          <span>{isMonitorFullscreen ? 'Exit Full Screen' : 'Full Screen'}</span>
+        </button>
+      </div>
 
       {/* 5. Left Floating HUD: Live Lat/Lon Raycast Info (ONLY inside Indian Ocean) */}
       <div className="absolute left-4 bottom-4 flex flex-col gap-2 max-w-[280px]">
