@@ -266,18 +266,18 @@ export function RealisticOceanMap({
   const satelliteImageRef = useRef<HTMLImageElement | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  // Viewport State: Center Lat/Lon and Scale (pixels per degree)
-  // Default bounds frame North Indian Ocean: ~3°N to 28°N, ~45°E to 98°E
+  // Viewport State: Center Lat/Lon and Scale
+  // Default bounds perfectly frame the North Indian Ocean: 0°N to 30°N, 40°E to 105°E
   const [viewState, setViewState] = useState({
-    centerLat: 16.5,
-    centerLon: 73.5,
-    zoom: 1.0, // 1.0 is default framing
+    centerLat: 15.0,
+    centerLon: 75.0,
+    zoom: 1.0, // 1.0 frames entire North Indian Ocean
   });
 
   // Layer Toggles
   const [showSatellite, setShowSatellite] = useState(true);
   const [showSST, setShowSST] = useState(true);
-  const [sstOpacity, setSstOpacity] = useState(0.65);
+  const [sstOpacity, setSstOpacity] = useState(0.60);
   const [showCurrents, setShowCurrents] = useState(true);
   const [showBathymetry, setShowBathymetry] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
@@ -377,12 +377,12 @@ export function RealisticOceanMap({
     };
   }, []);
 
-  // Coordinate Projection: Lat/Lon <-> Screen Pixels
+  // Coordinate Projection: Lat/Lon <-> Logical Screen Pixels
   const project = useCallback(
     (lat: number, lon: number, width: number, height: number) => {
       // Equirectangular projection centered at viewState
-      // Base scale: 1 degree ≈ (width / 55) * zoom
-      const degWidth = 55.0 / viewState.zoom;
+      // Span ~72 degrees longitude across canvas width at zoom = 1.0
+      const degWidth = 72.0 / viewState.zoom;
       const scaleX = width / degWidth;
       const cosLat = Math.cos((viewState.centerLat * Math.PI) / 180.0);
       const scaleY = scaleX / cosLat;
@@ -396,7 +396,7 @@ export function RealisticOceanMap({
 
   const unproject = useCallback(
     (px: number, py: number, width: number, height: number) => {
-      const degWidth = 55.0 / viewState.zoom;
+      const degWidth = 72.0 / viewState.zoom;
       const scaleX = width / degWidth;
       const cosLat = Math.cos((viewState.centerLat * Math.PI) / 180.0);
       const scaleY = scaleX / cosLat;
@@ -414,7 +414,8 @@ export function RealisticOceanMap({
   // Main Canvas Rendering Loop
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -423,17 +424,29 @@ export function RealisticOceanMap({
     const render = () => {
       if (!isRunning) return;
 
-      const width = canvas.width;
-      const height = canvas.height;
-      if (width === 0 || height === 0) return;
+      const dpr = window.devicePixelRatio || 1;
+      const width = container.clientWidth || 900;
+      const height = container.clientHeight || 550;
 
+      // Sync canvas pixel buffer with retina DPI while drawing in CSS logical pixels
+      if (
+        canvas.width !== Math.round(width * dpr) ||
+        canvas.height !== Math.round(height * dpr)
+      ) {
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+      }
+
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, width, height);
 
       // 1. Draw Satellite Imagery Layer
       if (showSatellite && satelliteImageRef.current && imageLoaded) {
         const img = satelliteImageRef.current;
-        // earth_daymap.jpg is 2048 x 1024, covers -180 to +180 lon, +90 to -90 lat
-        // Calculate visible bounding box in geographic coordinates
+        // earth_daymap.jpg is 2048 x 1024 equirectangular: covers -180 to +180 lon, +90 to -90 lat
         const topLeft = unproject(0, 0, width, height);
         const bottomRight = unproject(width, height, width, height);
 
@@ -442,17 +455,16 @@ export function RealisticOceanMap({
         const latMax = Math.min(90, topLeft.lat);
         const latMin = Math.max(-90, bottomRight.lat);
 
-        // Convert geo bounds to source texture UVs
+        // Map geo bounds to source texture pixel coords
         const sx = ((lonMin + 180.0) / 360.0) * img.width;
         const sy = ((90.0 - latMax) / 180.0) * img.height;
         const sw = ((lonMax - lonMin) / 360.0) * img.width;
         const sh = ((latMax - latMin) / 180.0) * img.height;
 
-        // Render satellite backdrop
         try {
           ctx.drawImage(img, sx, sy, sw, sh, 0, 0, width, height);
         } catch (e) {
-          // Fallback if image bounds error
+          // ignore any clipping bounds error
         }
       } else {
         // Deep oceanic base fill
@@ -524,17 +536,30 @@ export function RealisticOceanMap({
         ctx.save();
         ctx.globalAlpha = sstOpacity;
 
-        // Render high-precision SST thermal field using adaptive grid cells
-        const step = 20; // 20px grid
+        // Render high-precision SST thermal field using adaptive grid cells with smooth edge feathering
+        const step = 16;
         for (let py = 0; py < height; py += step) {
           for (let px = 0; px < width; px += step) {
             const geo = unproject(px + step / 2, py + step / 2, width, height);
-            // Only draw inside North Indian Ocean domain (approx 0 - 30°N, 45 - 102°E)
-            if (geo.lat >= 0 && geo.lat <= 30 && geo.lon >= 45 && geo.lon <= 102) {
-              const temp = calculateSST(geo.lat, geo.lon);
-              const color = getSSTColor(temp);
-              ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.55)`;
-              ctx.fillRect(px, py, step, step);
+            // Smooth edge feathering around Indian Ocean domain
+            if (geo.lat >= -2.0 && geo.lat <= 30.5 && geo.lon >= 40.0 && geo.lon <= 104.0) {
+              const fadeLon = Math.min(
+                Math.max(0, (geo.lon - 40.0) / 4.0),
+                Math.max(0, (104.0 - geo.lon) / 4.0),
+                1.0
+              );
+              const fadeLat = Math.min(
+                Math.max(0, (geo.lat - -2.0) / 3.0),
+                Math.max(0, (30.5 - geo.lat) / 3.0),
+                1.0
+              );
+              const edgeAlpha = fadeLon * fadeLat;
+              if (edgeAlpha > 0.02) {
+                const temp = calculateSST(geo.lat, geo.lon);
+                const color = getSSTColor(temp);
+                ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${0.52 * edgeAlpha})`;
+                ctx.fillRect(px, py, step, step);
+              }
             }
           }
         }
@@ -826,6 +851,7 @@ export function RealisticOceanMap({
         ctx.restore();
       }
 
+      ctx.restore(); // Restore outer render transform
       animFrameIdRef.current = requestAnimationFrame(render);
     };
 
@@ -864,15 +890,10 @@ export function RealisticOceanMap({
 
       const rect = container.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
-
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.scale(dpr, dpr);
-      }
     };
 
     handleResize();
@@ -903,7 +924,7 @@ export function RealisticOceanMap({
       const dx = e.clientX - dragStartRef.current.x;
       const dy = e.clientY - dragStartRef.current.y;
 
-      const degWidth = 55.0 / viewState.zoom;
+      const degWidth = 72.0 / viewState.zoom;
       const scaleX = rect.width / degWidth;
       const cosLat = Math.cos((dragStartRef.current.centerLat * Math.PI) / 180.0);
       const scaleY = scaleX / cosLat;
@@ -967,7 +988,7 @@ export function RealisticOceanMap({
 
     setViewState((prev) => {
       // Keep mouse position pinned to the same lat/lon
-      const degWidth = 55.0 / nextZoom;
+      const degWidth = 72.0 / nextZoom;
       const scaleX = rect.width / degWidth;
       const cosLat = Math.cos((prev.centerLat * Math.PI) / 180.0);
       const scaleY = scaleX / cosLat;
@@ -1014,8 +1035,8 @@ export function RealisticOceanMap({
 
   const handleReset = () => {
     setViewState({
-      centerLat: 16.5,
-      centerLon: 73.5,
+      centerLat: 15.0,
+      centerLon: 75.0,
       zoom: 1.0,
     });
   };
