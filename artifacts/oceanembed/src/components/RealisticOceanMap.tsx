@@ -18,6 +18,15 @@ import {
   Waves,
 } from 'lucide-react';
 import earthDayUrl from '@/assets/earth_daymap.jpg';
+import indianOceanReliefUrl from '@/assets/realistic_north_indian_ocean.webp';
+
+// Geographic Extent of realistic_north_indian_ocean.webp
+const RELIEF_BOUNDS = {
+  lonMin: 50.35,
+  lonMax: 106.79,
+  latMin: 0.04,
+  latMax: 26.21,
+};
 
 export interface PinnedPoint {
   lat: number;
@@ -267,10 +276,10 @@ export function RealisticOceanMap({
   const [imageLoaded, setImageLoaded] = useState(false);
 
   // Viewport State: Center Lat/Lon and Scale
-  // Default bounds perfectly frame the North Indian Ocean: 0°N to 30°N, 40°E to 105°E
+  // Default bounds perfectly frame the North Indian Ocean relief map: 0°N to 26.2°N, 50.3°E to 106.8°E
   const [viewState, setViewState] = useState({
-    centerLat: 15.0,
-    centerLon: 75.0,
+    centerLat: 13.5,
+    centerLon: 78.5,
     zoom: 1.0, // 1.0 frames entire North Indian Ocean
   });
 
@@ -366,7 +375,10 @@ export function RealisticOceanMap({
     particlesRef.current = particles;
   }, []);
 
-  // Load satellite image
+  // Load satellite image & user-provided high-res relief map
+  const reliefImageRef = useRef<HTMLImageElement | null>(null);
+  const [reliefLoaded, setReliefLoaded] = useState(false);
+
   useEffect(() => {
     const img = new Image();
     img.src = earthDayUrl;
@@ -375,14 +387,21 @@ export function RealisticOceanMap({
       satelliteImageRef.current = img;
       setImageLoaded(true);
     };
+
+    const reliefImg = new Image();
+    reliefImg.src = indianOceanReliefUrl;
+    reliefImg.onload = () => {
+      reliefImageRef.current = reliefImg;
+      setReliefLoaded(true);
+    };
   }, []);
 
   // Coordinate Projection: Lat/Lon <-> Logical Screen Pixels
   const project = useCallback(
     (lat: number, lon: number, width: number, height: number) => {
       // Equirectangular projection centered at viewState
-      // Span ~72 degrees longitude across canvas width at zoom = 1.0
-      const degWidth = 72.0 / viewState.zoom;
+      // Span ~58 degrees longitude across canvas width at zoom = 1.0 to frame the relief map
+      const degWidth = 58.0 / viewState.zoom;
       const scaleX = width / degWidth;
       const cosLat = Math.cos((viewState.centerLat * Math.PI) / 180.0);
       const scaleY = scaleX / cosLat;
@@ -396,7 +415,7 @@ export function RealisticOceanMap({
 
   const unproject = useCallback(
     (px: number, py: number, width: number, height: number) => {
-      const degWidth = 72.0 / viewState.zoom;
+      const degWidth = 58.0 / viewState.zoom;
       const scaleX = width / degWidth;
       const cosLat = Math.cos((viewState.centerLat * Math.PI) / 180.0);
       const scaleY = scaleX / cosLat;
@@ -443,28 +462,44 @@ export function RealisticOceanMap({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Draw Satellite Imagery Layer
-      if (showSatellite && satelliteImageRef.current && imageLoaded) {
-        const img = satelliteImageRef.current;
-        // earth_daymap.jpg is 2048 x 1024 equirectangular: covers -180 to +180 lon, +90 to -90 lat
-        const topLeft = unproject(0, 0, width, height);
-        const bottomRight = unproject(width, height, width, height);
+      // 1. Draw Satellite & Hyper-Realistic Relief Map Layer
+      if (showSatellite) {
+        // A. Global satellite surround backdrop
+        if (satelliteImageRef.current && imageLoaded) {
+          const img = satelliteImageRef.current;
+          const topLeft = unproject(0, 0, width, height);
+          const bottomRight = unproject(width, height, width, height);
 
-        const lonMin = Math.max(-180, topLeft.lon);
-        const lonMax = Math.min(180, bottomRight.lon);
-        const latMax = Math.min(90, topLeft.lat);
-        const latMin = Math.max(-90, bottomRight.lat);
+          const lonMin = Math.max(-180, topLeft.lon);
+          const lonMax = Math.min(180, bottomRight.lon);
+          const latMax = Math.min(90, topLeft.lat);
+          const latMin = Math.max(-90, bottomRight.lat);
 
-        // Map geo bounds to source texture pixel coords
-        const sx = ((lonMin + 180.0) / 360.0) * img.width;
-        const sy = ((90.0 - latMax) / 180.0) * img.height;
-        const sw = ((lonMax - lonMin) / 360.0) * img.width;
-        const sh = ((latMax - latMin) / 180.0) * img.height;
+          const sx = ((lonMin + 180.0) / 360.0) * img.width;
+          const sy = ((90.0 - latMax) / 180.0) * img.height;
+          const sw = ((lonMax - lonMin) / 360.0) * img.width;
+          const sh = ((latMax - latMin) / 180.0) * img.height;
 
-        try {
-          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, width, height);
-        } catch (e) {
-          // ignore any clipping bounds error
+          try {
+            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, width, height);
+          } catch (e) {}
+        } else {
+          ctx.fillStyle = '#06172e';
+          ctx.fillRect(0, 0, width, height);
+        }
+
+        // B. Hyper-Realistic Relief Map (User provided pixel-perfect satellite map)
+        if (reliefImageRef.current && reliefLoaded) {
+          const tl = project(RELIEF_BOUNDS.latMax, RELIEF_BOUNDS.lonMin, width, height);
+          const br = project(RELIEF_BOUNDS.latMin, RELIEF_BOUNDS.lonMax, width, height);
+          const destX = tl.px;
+          const destY = tl.py;
+          const destW = br.px - tl.px;
+          const destH = br.py - tl.py;
+
+          try {
+            ctx.drawImage(reliefImageRef.current, destX, destY, destW, destH);
+          } catch (e) {}
         }
       } else {
         // Deep oceanic base fill
@@ -924,7 +959,7 @@ export function RealisticOceanMap({
       const dx = e.clientX - dragStartRef.current.x;
       const dy = e.clientY - dragStartRef.current.y;
 
-      const degWidth = 72.0 / viewState.zoom;
+      const degWidth = 58.0 / viewState.zoom;
       const scaleX = rect.width / degWidth;
       const cosLat = Math.cos((dragStartRef.current.centerLat * Math.PI) / 180.0);
       const scaleY = scaleX / cosLat;
@@ -988,7 +1023,7 @@ export function RealisticOceanMap({
 
     setViewState((prev) => {
       // Keep mouse position pinned to the same lat/lon
-      const degWidth = 72.0 / nextZoom;
+      const degWidth = 58.0 / nextZoom;
       const scaleX = rect.width / degWidth;
       const cosLat = Math.cos((prev.centerLat * Math.PI) / 180.0);
       const scaleY = scaleX / cosLat;
@@ -1035,8 +1070,8 @@ export function RealisticOceanMap({
 
   const handleReset = () => {
     setViewState({
-      centerLat: 15.0,
-      centerLon: 75.0,
+      centerLat: 13.5,
+      centerLon: 78.5,
       zoom: 1.0,
     });
   };
