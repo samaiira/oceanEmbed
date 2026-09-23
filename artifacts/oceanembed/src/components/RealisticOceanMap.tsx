@@ -184,6 +184,7 @@ export function RealisticOceanMap({
 }: RealisticOceanMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animFrameIdRef = useRef<number | null>(null);
 
   // Bathymetric map image
   const mapImageRef = useRef<HTMLImageElement | null>(null);
