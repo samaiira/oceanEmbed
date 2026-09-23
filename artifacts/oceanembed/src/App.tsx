@@ -16,6 +16,7 @@ import { SupabaseAuthProvider, useSupabaseAuth } from '@/lib/supabase-auth-conte
 import { AuthCard } from '@/components/auth-card';
 import { NewReconstructionDialog, type ReconstructionResult } from '@/components/new-reconstruction-dialog';
 import { Earth3DGlobe, type PinnedPoint } from '@/components/Earth3DGlobe';
+import sst2dMapUrl from '@/assets/sst_2d_scientific_map.jpg';
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -380,25 +381,224 @@ function StatCard({ label, value, note, icon: StatIcon, accent = false }: { labe
   );
 }
 
-function OceanMap({ compact = false, selectedLayer = 'Sea surface temperature', onSelect }: { compact?: boolean; selectedLayer?: string; onSelect?: (name: string) => void }) {
+function OceanMap({
+  compact = false,
+  selectedLayer = 'Sea surface temperature',
+  onSelect,
+  onDropPin,
+  onLaunchReconstruction,
+}: {
+  compact?: boolean;
+  selectedLayer?: string;
+  onSelect?: (name: string) => void;
+  onDropPin?: (point: PinnedPoint) => void;
+  onLaunchReconstruction?: (lat: number, lon: number, sst: number) => void;
+}) {
   const { runs, activeRun, setActiveRun } = useReconstructions();
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [hoverPos, setHoverPos] = useState<{
+    x: number;
+    y: number;
+    lat: number;
+    lon: number;
+    sst: number;
+    region: string;
+  } | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<PinnedPoint | null>(null);
+
+  // Exact geographic boundary calibration matching sst_2d_scientific_map.jpg (1024 x 420 px)
+  // Plot border: Left x=71 (40°E), Right x=886 (100°E), Top y=22 (30°N), Bottom y=381 (5°N)
+  const PLOT = {
+    xMin: 71,
+    xMax: 886,
+    yMin: 22,
+    yMax: 381,
+    lonMin: 40.0,
+    lonMax: 100.0,
+    latMin: 5.0,
+    latMax: 30.0,
+  };
 
   const getCoordinates = (lat: number, lon: number) => {
-    const clampedLon = Math.max(45, Math.min(105, lon));
-    const clampedLat = Math.max(5, Math.min(30, lat));
-    const x = ((clampedLon - 45) / 60) * 900 + 50;
-    const y = ((30 - clampedLat) / 25) * 420 + 40;
+    const clampedLon = Math.max(PLOT.lonMin, Math.min(PLOT.lonMax, lon));
+    const clampedLat = Math.max(PLOT.latMin, Math.min(PLOT.latMax, lat));
+    const x = PLOT.xMin + ((clampedLon - PLOT.lonMin) / (PLOT.lonMax - PLOT.lonMin)) * (PLOT.xMax - PLOT.xMin);
+    const y = PLOT.yMin + ((PLOT.latMax - clampedLat) / (PLOT.latMax - PLOT.latMin)) * (PLOT.yMax - PLOT.yMin);
     return { x, y };
   };
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const clientX = e.clientX - rect.left;
+    const clientY = e.clientY - rect.top;
+
+    const scaleX = 1024 / rect.width;
+    const scaleY = 420 / rect.height;
+    const imgX = clientX * scaleX;
+    const imgY = clientY * scaleY;
+
+    if (
+      imgX >= PLOT.xMin &&
+      imgX <= PLOT.xMax &&
+      imgY >= PLOT.yMin &&
+      imgY <= PLOT.yMax
+    ) {
+      const lon = Number(
+        (
+          PLOT.lonMin +
+          ((imgX - PLOT.xMin) / (PLOT.xMax - PLOT.xMin)) * (PLOT.lonMax - PLOT.lonMin)
+        ).toFixed(2)
+      );
+      const lat = Number(
+        (
+          PLOT.latMax -
+          ((imgY - PLOT.yMin) / (PLOT.yMax - PLOT.yMin)) * (PLOT.latMax - PLOT.latMin)
+        ).toFixed(2)
+      );
+
+      const sst = Number(
+        (28.8 - Math.abs(lat - 12.0) * 0.32 + Math.sin(lon * 0.12) * 0.5).toFixed(1)
+      );
+      const region =
+        lon < 77.5
+          ? lat > 20
+            ? 'Northern Arabian Sea / Gujarat'
+            : lat > 12
+            ? 'Central Arabian Sea Basin'
+            : 'South Arabian Sea / Lakshadweep'
+          : lat > 18
+          ? 'Northern Bay of Bengal'
+          : lat > 12
+          ? 'Central Bay of Bengal'
+          : 'Andaman Sea / Equatorial';
+
+      setHoverPos({
+        x: imgX,
+        y: imgY,
+        lat,
+        lon,
+        sst,
+        region,
+      });
+    } else {
+      setHoverPos(null);
+    }
+  };
+
+  const handleClick = () => {
+    if (hoverPos) {
+      const point: PinnedPoint = {
+        lat: hoverPos.lat,
+        lon: hoverPos.lon,
+        sst: hoverPos.sst,
+        region: hoverPos.region,
+        depths: [0, 10, 20, 50, 100, 200, 500, 1000],
+      };
+      setSelectedPoint(point);
+      onDropPin?.(point);
+    }
+  };
+
+  const selectedCoord = selectedPoint
+    ? getCoordinates(selectedPoint.lat, selectedPoint.lon)
+    : null;
+
   return (
-    <div className={`relative overflow-hidden border border-[#294966] bg-[#133458] ${compact ? 'h-[300px]' : 'h-[490px]'}`}>
-      <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(#8da9a930 1px, transparent 1px),linear-gradient(90deg,#8da9a930 1px,transparent 1px)', backgroundSize: '42px 42px' }} />
-      <svg id="ocean-map-svg" viewBox="0 0 1000 500" className="absolute inset-0 h-full w-full" aria-label="Ocean data map">
-        <path d="M0 0H1000V500H0z" fill="#133458" />
-        <path d="M0 82C53 64 67 99 105 90c36-9 26-64 66-58 30 5 41 45 70 40 31-5 27-40 65-27 34 12 11 57 43 65 31 8 39-25 65-21 35 5 17 60 53 72 34 11 43-44 77-40 32 4 29 52 63 56 33 4 51-24 72-13 28 15 7 61 48 70 30 7 42-33 70-24 32 10 14 48 51 52 37 4 42-37 72-25 31 13 18 64 50 72 28 7 51-16 72-8v78H0z" fill="#567068" opacity=".9" />
-        <path d="M0 235c37-27 55-5 82-16 35-14 21-63 57-57 35 6 31 47 69 51 35 4 41-28 72-17 30 11 12 61 46 68 39 8 50-30 78-18 31 14 11 67 47 75 37 8 45-30 77-20 32 10 16 60 51 68 42 10 49-31 78-23 36 10 15 63 53 72 38 9 39-38 70-26 32 12 20 65 56 73 39 9 44-31 76-24 33 8 24 42 58 53l42 8v-94c-30-5-47-27-77-21-33 6-33 40-68 31-36-10-19-67-56-76-34-8-41 43-76 34-34-9-22-62-57-73-32-10-46 32-77 22-35-11-21-65-55-74-38-11-45 29-75 20-33-10-17-66-53-76-33-9-42 31-77 19-39-13-21-62-55-71-38-9-43 32-77 22-36-11-30-47-63-54-34-7-33 18-69 26-32 7-45-14-82 11z" fill="#567068" opacity=".55" transform="translate(0 150)" />
-        <path d="M20 442c120-24 174 12 274-13s166-4 261 7 204-29 425 12" stroke="#D99B21" strokeWidth="1.2" strokeDasharray="5 7" fill="none" opacity=".7" />
+    <div
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setHoverPos(null)}
+      onClick={handleClick}
+      className={`relative w-full overflow-hidden border border-[#294966] bg-[#ffffff] select-none cursor-crosshair ${
+        compact ? 'h-[320px] sm:h-[400px]' : 'h-[500px] sm:h-[620px] lg:h-[720px]'
+      }`}
+    >
+      {/* 1. Authentic Scientific SST Satellite Map Image (Pixel-Perfect) */}
+      <img
+        src={sst2dMapUrl}
+        alt="North Indian Ocean Sea Surface Temperature Scientific Map"
+        className="h-full w-full object-contain pointer-events-none"
+      />
+
+      {/* 2. Interactive SVG Overlay (1024 x 420 viewBox) */}
+      <svg
+        id="ocean-map-svg"
+        viewBox="0 0 1024 420"
+        preserveAspectRatio="xMidYMid meet"
+        className="absolute inset-0 h-full w-full pointer-events-none"
+      >
+        {/* Dynamic Crosshair Guide on Hover */}
+        {hoverPos && (
+          <g>
+            <line
+              x1={PLOT.xMin}
+              y1={hoverPos.y}
+              x2={PLOT.xMax}
+              y2={hoverPos.y}
+              stroke="#D99B21"
+              strokeWidth={1.2}
+              strokeDasharray="4 3"
+              opacity={0.85}
+            />
+            <line
+              x1={hoverPos.x}
+              y1={PLOT.yMin}
+              x2={hoverPos.x}
+              y2={PLOT.yMax}
+              stroke="#D99B21"
+              strokeWidth={1.2}
+              strokeDasharray="4 3"
+              opacity={0.85}
+            />
+            <circle
+              cx={hoverPos.x}
+              cy={hoverPos.y}
+              r={4.5}
+              fill="#D99B21"
+              stroke="#ffffff"
+              strokeWidth={1.5}
+            />
+          </g>
+        )}
+
+        {/* Selected Target Pin Marker */}
+        {selectedCoord && (
+          <g>
+            <circle
+              cx={selectedCoord.x}
+              cy={selectedCoord.y}
+              r={16}
+              fill="none"
+              stroke="#D99B21"
+              strokeWidth={1.2}
+              strokeDasharray="3 3"
+              className="animate-spin"
+              style={{ animationDuration: '6s' }}
+            />
+            <circle
+              cx={selectedCoord.x}
+              cy={selectedCoord.y}
+              r={24}
+              fill="none"
+              stroke="#D99B21"
+              strokeWidth={1}
+              opacity={0.4}
+              className="animate-pulse"
+            />
+            <circle
+              cx={selectedCoord.x}
+              cy={selectedCoord.y}
+              r={5}
+              fill="#D99B21"
+              stroke="#FAF7BB"
+              strokeWidth={2}
+            />
+          </g>
+        )}
+
+        {/* Active Casts (Argo Floats) Plotted at exact Coordinates */}
         {runs.map((run) => {
           const { x, y } = getCoordinates(run.latitude, run.longitude);
           const isActive = activeRun?.id === run.id;
@@ -406,40 +606,115 @@ function OceanMap({ compact = false, selectedLayer = 'Sea surface temperature', 
             <g
               key={run.id}
               transform={`translate(${x},${y})`}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setActiveRun(run);
                 onSelect?.(run.name);
               }}
-              className="cursor-pointer"
+              className="pointer-events-auto cursor-pointer"
             >
-              <circle r={isActive ? 16 : 11} fill="#D99B21" opacity={isActive ? 0.35 : 0.16}>
-                <animate attributeName="r" values={isActive ? '12;20;12' : '8;14;8'} dur={isActive ? '2s' : '3s'} repeatCount="indefinite" />
+              <circle
+                r={isActive ? 16 : 10}
+                fill="#D99B21"
+                opacity={isActive ? 0.45 : 0.22}
+              >
+                <animate
+                  attributeName="r"
+                  values={isActive ? '12;20;12' : '8;14;8'}
+                  dur={isActive ? '2s' : '3.5s'}
+                  repeatCount="indefinite"
+                />
               </circle>
-              <circle r={isActive ? 5 : 3.5} fill={isActive ? '#D99B21' : '#FAF7BB'} stroke="#133458" strokeWidth="1.5" />
-              <text x="10" y="3" fill={isActive ? '#D99B21' : '#FAF7BB'} fontSize={isActive ? '12' : '11'} fontWeight={isActive ? 'bold' : 'normal'} fontFamily="Space Mono">
+              <circle
+                r={isActive ? 6 : 4}
+                fill={isActive ? '#D99B21' : '#FAF7BB'}
+                stroke="#133458"
+                strokeWidth={1.5}
+              />
+              <text
+                x="9"
+                y="3.5"
+                fill="#133458"
+                stroke="#FAF7BB"
+                strokeWidth={2.5}
+                paintOrder="stroke"
+                fontSize={isActive ? '11' : '10'}
+                fontWeight={isActive ? 'bold' : '600'}
+                fontFamily="Space Mono, monospace"
+              >
                 {run.name.split('(')[0].trim()}
               </text>
             </g>
           );
         })}
       </svg>
-      <div className="absolute left-4 top-4 flex items-center gap-2 border border-[#FAF7BB]/15 bg-[#133458]/75 px-3 py-2 text-[10px] text-[#FAF7BB]/75 backdrop-blur">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#D99B21]" /> NORTH INDIAN OCEAN <span className="font-data text-[#FAF7BB]/45">· {studyBounds} · {runs.length} ACTIVE CASTS</span>
+
+      {/* Top Banner: Domain Info */}
+      <div className="absolute left-3 top-3 flex items-center gap-2 border border-[#FAF7BB]/20 bg-[#133458]/90 px-3 py-1.5 text-[10px] text-[#FAF7BB] backdrop-blur rounded-sm shadow-md">
+        <span className="h-2 w-2 rounded-full bg-[#D99B21] animate-pulse" />
+        <span className="font-semibold uppercase tracking-wider font-data">
+          2D Scientific SST Map
+        </span>
+        <span className="font-data text-[#FAF7BB]/50 hidden sm:inline">
+          · Domain: 5°–30°N, 40°–100°E · {runs.length} Active Floats
+        </span>
       </div>
-      <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-        <div className="text-[10px] text-[#FAF7BB]/55">
-          <div className="mb-1 font-data text-[#FAF7BB]/80">30°N</div>
-          <div>20°N</div>
-          <div>10°N</div>
-          <div>5°N</div>
-        </div>
-        <div className="w-40">
-          <div className="mb-1 flex justify-between font-data text-[9px] text-[#FAF7BB]/65">
-            <span>45°E</span><span>{selectedLayer}</span><span>105°E</span>
+
+      {/* Live Hover Coordinate Readout HUD */}
+      {hoverPos && (
+        <div className="absolute left-3 bottom-3 border border-[#D99B21]/60 bg-[#0a1d33]/95 px-3 py-2 text-xs text-[#FAF7BB] backdrop-blur rounded-sm shadow-xl pointer-events-none animate-in fade-in duration-100">
+          <div className="font-bold text-sm font-data text-[#FAF7BB]">
+            {hoverPos.lat}°N, {hoverPos.lon}°E
           </div>
-          <div className="h-1.5 bg-gradient-to-r from-[#2c6478] via-[#9caf68] to-[#d99b21]" />
+          <div className="text-[11px] text-[#20a39e] font-medium truncate mt-0.5">
+            {hoverPos.region}
+          </div>
+          <div className="flex items-center justify-between gap-3 text-[10px] font-data text-[#FAF7BB]/60 border-t border-[#FAF7BB]/10 pt-1 mt-1">
+            <span>
+              SST: <strong className="text-[#D99B21]">{hoverPos.sst}°C</strong>
+            </span>
+            <span className="text-[#D99B21]">Click to pin</span>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Selected Target Popover with "Reconstruct Here" button */}
+      {selectedPoint && (
+        <div className="absolute right-3 bottom-3 w-72 border border-[#D99B21] bg-[#0a1d33]/95 p-3 text-xs text-[#FAF7BB] backdrop-blur rounded-sm shadow-2xl animate-in slide-in-from-bottom-2 duration-150">
+          <div className="flex items-center justify-between border-b border-[#FAF7BB]/15 pb-1.5">
+            <span className="font-bold text-[#D99B21] text-xs uppercase font-data">
+              Target Selected
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedPoint(null);
+              }}
+              className="text-[#FAF7BB]/60 hover:text-[#FAF7BB] p-0.5"
+            >
+              <X size={13} />
+            </button>
+          </div>
+          <div className="mt-1.5 font-data text-sm font-bold text-[#FAF7BB]">
+            {selectedPoint.lat}°N, {selectedPoint.lon}°E
+          </div>
+          <div className="text-[11px] text-[#20a39e] font-medium">{selectedPoint.region}</div>
+          <div className="mt-1 text-[11px] font-data text-[#FAF7BB]/70">
+            Est. SST: <strong className="text-[#D99B21]">{selectedPoint.sst}°C</strong>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onLaunchReconstruction?.(selectedPoint.lat, selectedPoint.lon, selectedPoint.sst);
+            }}
+            className="mt-2.5 w-full flex items-center justify-center gap-1.5 rounded-sm bg-[#D99B21] py-1.5 px-3 text-xs font-bold text-[#133458] hover:bg-[#e8aa2a] transition-all shadow-md active:scale-[0.98]"
+          >
+            <Sparkles size={13} /> Reconstruct Here
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -719,7 +994,15 @@ function Dashboard() {
               }}
             />
           ) : (
-            <OceanMap onSelect={setSelected} />
+            <OceanMap
+              onSelect={setSelected}
+              onDropPin={(point) => {
+                setPickedPoint(point);
+              }}
+              onLaunchReconstruction={(lat, lon, sst) => {
+                openWithCoordinates(lat, lon, sst);
+              }}
+            />
           )}
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#536675]">
@@ -1000,7 +1283,16 @@ function MapNio() {
                 }}
               />
             ) : (
-              <OceanMap selectedLayer={layer} onSelect={setSelected} />
+              <OceanMap
+                selectedLayer={layer}
+                onSelect={setSelected}
+                onDropPin={(point) => {
+                  setPickedPoint(point);
+                }}
+                onLaunchReconstruction={(lat, lon, sst) => {
+                  openWithCoordinates(lat, lon, sst);
+                }}
+              />
             )}
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-[#24384d] font-semibold">
               <span className="font-data text-[10px] text-[#133458] font-bold">
@@ -1011,7 +1303,7 @@ function MapNio() {
                 )}
               </span>
               <span className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-[#D99B21]" /> Click anywhere on the 3D globe to inspect Latitude & Longitude
+                <span className="h-2 w-2 rounded-full bg-[#D99B21]" /> Click anywhere on the map or globe to inspect Latitude & Longitude
               </span>
             </div>
           </section>
