@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Redirect, Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import {
   Activity, ArrowDownRight, ArrowRight, Bell, Check, ChevronDown,
