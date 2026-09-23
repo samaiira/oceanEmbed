@@ -11,12 +11,8 @@ import {
   Check,
   X,
   Crosshair,
-  Flame,
-  Cloud,
   Maximize2,
   Minimize2,
-  Sun,
-  Grid,
   AlertCircle,
 } from 'lucide-react';
 
@@ -433,11 +429,11 @@ export function Earth3DGlobe({
   // USER REQUIREMENT: Stopped revolving by default
   const [autoRotate, setAutoRotate] = useState<boolean>(false);
 
-  // Layer Toggles
-  const [showSst, setShowSst] = useState<boolean>(true);
-  const [showClouds, setShowClouds] = useState<boolean>(true);
-  const [showNightLights, setShowNightLights] = useState<boolean>(true);
-  const [showGraticules, setShowGraticules] = useState<boolean>(true);
+  // USER REQUIREMENT: Layers permanently active (Heat, Clouds, City Lights, Grid)
+  const showSst = true;
+  const showClouds = true;
+  const showNightLights = true;
+  const showGraticules = true;
 
   // Daylight sun vector
   const sunDir = useMemo<[number, number, number]>(() => {
@@ -499,20 +495,16 @@ export function Earth3DGlobe({
   const scaleRef = useRef(scale);
   const autoRotateRef = useRef(autoRotate);
   const isDraggingRef = useRef(isDragging);
-  const showSstRef = useRef(showSst);
-  const showCloudsRef = useRef(showClouds);
-  const showNightLightsRef = useRef(showNightLights);
-  const showGraticulesRef = useRef(showGraticules);
+  const showSstRef = useRef(true);
+  const showCloudsRef = useRef(true);
+  const showNightLightsRef = useRef(true);
+  const showGraticulesRef = useRef(true);
 
   useEffect(() => { lambda0Ref.current = lambda0; }, [lambda0]);
   useEffect(() => { phi0Ref.current = phi0; }, [phi0]);
   useEffect(() => { scaleRef.current = scale; }, [scale]);
   useEffect(() => { autoRotateRef.current = autoRotate; }, [autoRotate]);
   useEffect(() => { isDraggingRef.current = isDragging; }, [isDragging]);
-  useEffect(() => { showSstRef.current = showSst; }, [showSst]);
-  useEffect(() => { showCloudsRef.current = showClouds; }, [showClouds]);
-  useEffect(() => { showNightLightsRef.current = showNightLights; }, [showNightLights]);
-  useEffect(() => { showGraticulesRef.current = showGraticules; }, [showGraticules]);
 
   // Project (lat, lon) to 2D screen coords
   const project = useCallback(
@@ -992,75 +984,20 @@ export function Earth3DGlobe({
         <span className="font-data text-[#FAF7BB]/50 hidden sm:inline">· Domain: 5–30°N, 45–105°E</span>
       </div>
 
-      {/* 4. Top-Right: Photorealistic Layer Toggles */}
-      <div className="absolute right-4 top-4 flex flex-wrap items-center gap-1.5">
-        <button
-          type="button"
-          onClick={() => setShowSst((prev) => !prev)}
-          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-sm border transition-all ${
-            showSst
-              ? 'border-[#ff9900] bg-[#e65100]/25 text-[#ffd700] shadow-sm'
-              : 'border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB]/60 hover:text-[#FAF7BB]'
-          }`}
-          title="Toggle Indian Ocean Yellow-Red Thermal Highlight"
-        >
-          <Flame size={12} className={showSst ? 'text-[#ff9900]' : ''} />
-          <span>Indian Ocean Heat</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setShowClouds((prev) => !prev)}
-          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-sm border transition-all ${
-            showClouds
-              ? 'border-[#38bdf8] bg-[#38bdf8]/20 text-[#FAF7BB] shadow-sm'
-              : 'border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB]/60 hover:text-[#FAF7BB]'
-          }`}
-          title="Toggle Satellite Clouds"
-        >
-          <Cloud size={12} className={showClouds ? 'text-[#38bdf8]' : ''} />
-          <span>Clouds</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setShowNightLights((prev) => !prev)}
-          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-sm border transition-all ${
-            showNightLights
-              ? 'border-[#fbbf24] bg-[#fbbf24]/20 text-[#FAF7BB] shadow-sm'
-              : 'border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB]/60 hover:text-[#FAF7BB]'
-          }`}
-          title="Toggle City Lights"
-        >
-          <Sun size={12} className={showNightLights ? 'text-[#fbbf24]' : ''} />
-          <span>City Lights</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setShowGraticules((prev) => !prev)}
-          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-sm border transition-all ${
-            showGraticules
-              ? 'border-[#20a39e] bg-[#20a39e]/20 text-[#FAF7BB] shadow-sm'
-              : 'border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB]/60 hover:text-[#FAF7BB]'
-          }`}
-          title="Toggle Graticule Grid"
-        >
-          <Grid size={12} className={showGraticules ? 'text-[#20a39e]' : ''} />
-          <span>Grid</span>
-        </button>
-
-        {onToggleExpand && (
+      {/* 4. Top-Right: Full Screen / Expand Button */}
+      {onToggleExpand && (
+        <div className="absolute right-4 top-4 flex items-center">
           <button
             type="button"
             onClick={onToggleExpand}
-            className="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded-sm border border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB]/80 hover:text-[#FAF7BB] transition-all ml-1"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm border border-[#FAF7BB]/25 bg-[#0a1d33]/90 text-[#FAF7BB] hover:bg-[#133458] hover:border-[#D99B21] transition-all shadow-md backdrop-blur cursor-pointer"
             title={expanded ? 'Minimize view' : 'Maximize full-width'}
           >
-            {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            {expanded ? <Minimize2 size={13} className="text-[#D99B21]" /> : <Maximize2 size={13} className="text-[#D99B21]" />}
+            <span>{expanded ? 'Collapse' : 'Full Screen'}</span>
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* 5. Left Floating HUD: Live Lat/Lon Raycast Info (ONLY inside Indian Ocean) */}
       <div className="absolute left-4 bottom-4 flex flex-col gap-2 max-w-[280px]">
