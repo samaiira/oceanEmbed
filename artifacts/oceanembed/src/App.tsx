@@ -354,8 +354,8 @@ function SectionHeading({ eyebrow, title, description, action }: { eyebrow: stri
     <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
         <div className="oe-kicker mb-2">{eyebrow}</div>
-        <h1 className="font-display text-[clamp(32px,4vw,51px)] leading-[.98] tracking-[-.035em] text-[#133458]">{title}</h1>
-        {description && <p className="mt-3 max-w-2xl text-sm leading-6 text-[#536675]">{description}</p>}
+        <h1 className="font-display text-[clamp(34px,4.5vw,52px)] leading-[1.02] tracking-[-0.035em] text-[#133458]">{title}</h1>
+        {description && <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-[#536675] font-normal">{description}</p>}
       </div>
       {action}
     </div>
@@ -364,18 +364,18 @@ function SectionHeading({ eyebrow, title, description, action }: { eyebrow: stri
 
 function StatCard({ label, value, note, icon: StatIcon, accent = false }: { label: string; value: string; note: string; icon: Icon; accent?: boolean }) {
   return (
-    <div className={`oe-card relative overflow-hidden p-5 ${accent ? 'border-[#133458] ring-1 ring-[#133458]/30 shadow-sm' : ''}`}>
+    <div className={`oe-card relative overflow-hidden p-5 ${accent ? 'border-[#133458]/40 ring-2 ring-[#133458]/10 shadow-md' : ''}`}>
       <div className="flex items-center justify-between text-[#24384d]">
-        <span className="oe-label font-bold text-[#133458]">{label}</span>
-        <StatIcon size={17} strokeWidth={1.8} className={accent ? 'text-[#838921]' : 'text-[#133458]'} />
+        <span className="oe-label font-bold text-[#133458]/80">{label}</span>
+        <StatIcon size={17} strokeWidth={2} className={accent ? 'text-[#838921]' : 'text-[#133458]'} />
       </div>
-      <div className="mt-6 font-data text-[29px] font-bold tracking-[-.06em] text-[#133458]">
+      <div className="mt-5 font-display text-[32px] font-bold tracking-tight text-[#133458]">
         {value}
       </div>
-      <div className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-[#24384d]">
+      <div className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-[#24384d]/90 font-data">
         <ArrowDownRight size={13} className="text-[#838921]" />{note}
       </div>
-      {accent && <div className="absolute -bottom-12 -right-7 h-28 w-28 rounded-full border border-[#133458]/10" />}
+      {accent && <div className="absolute -bottom-12 -right-7 h-28 w-28 rounded-full border border-[#133458]/10 bg-white/10 pointer-events-none" />}
     </div>
   );
 }
@@ -870,23 +870,23 @@ function Dashboard() {
     <AppShell>
       <div className="oe-page oe-grid">
         {/* Supabase Authenticated Session Banner */}
-        <div className="mb-6 rounded-xl border border-[#D8D0B3] bg-[#FAF7BB] p-4 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4" data-testid="auth-status-banner">
+        <div className="mb-6 rounded-2xl border border-white/80 bg-white/55 backdrop-blur-xl p-4 shadow-[0_10px_30px_-5px_rgba(19,52,88,0.06),inset_0_1.5px_1px_rgba(255,255,255,0.95)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4" data-testid="auth-status-banner">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#133458] text-[#FAF7BB]">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#133458] text-[#FAF7BB] shadow-sm">
               <Waves size={20} />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-[#133458]">{userName}</span>
-                <span className="rounded-full bg-[#e5ebd3] px-2.5 py-0.5 text-[10px] font-semibold text-[#536b35] flex items-center gap-1">
+                <span className="rounded-full bg-[#e5ebd3] px-2.5 py-0.5 text-[10px] font-semibold text-[#536b35] flex items-center gap-1 border border-[#838921]/20">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#838921]" /> Supabase Active
                 </span>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-data text-[11px] text-[#536675]">
-                <span>Email: <strong className="text-[#133458]">{userEmail}</strong></span>
+                <span>Email: <strong className="text-[#133458] font-medium">{userEmail}</strong></span>
                 <span className="hidden sm:inline">·</span>
                 <span className="flex items-center gap-1.5">
-                  User ID: <code className="bg-[#e8e2ba] px-2 py-0.5 rounded text-[#133458] font-bold font-mono text-[11px]">{userId || 'local-researcher'}</code>
+                  User ID: <code className="bg-white/80 border border-black/5 px-2 py-0.5 rounded-md text-[#133458] font-bold font-mono text-[11px] shadow-xs">{userId || 'local-researcher'}</code>
                   {userId && (
                     <button
                       onClick={copyUserId}
@@ -900,7 +900,7 @@ function Dashboard() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 self-end md:self-auto text-[10px] font-data text-[#536675] bg-[#fffdf0] border border-[#D8D0B3] px-3 py-1.5 rounded-sm">
+          <div className="flex items-center gap-2 self-end md:self-auto text-[10px] font-data text-[#536675] bg-white/70 backdrop-blur-md border border-white/80 px-3.5 py-1.5 rounded-xl shadow-xs">
             <Database size={13} className="text-[#838921]" />
             <span>Database Table: <strong className="text-[#133458]">public.profiles</strong> (Synchronized)</span>
           </div>
@@ -913,7 +913,7 @@ function Dashboard() {
           action={
             <button
               onClick={() => setDialogOpen(true)}
-              className="oe-control oe-primary flex items-center gap-2"
+              className="oe-control oe-primary flex items-center gap-2 font-semibold shadow-md active:scale-95"
               data-testid="button-new-reconstruction"
             >
               <Plus size={15} /> New reconstruction
@@ -927,7 +927,7 @@ function Dashboard() {
           <StatCard label="Total Floats" value="228" note="183 train · 45 test (80/20)" icon={Sparkles} />
         </div>
         {/* Full Screen 3D Earth Section (Permanent Full-Width Hero) */}
-        <section className="oe-card p-4 sm:p-5 mt-5 w-full shadow-lg border border-[#294966]/40">
+        <section className="oe-card p-4 sm:p-5 mt-6 w-full shadow-xl">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="oe-kicker mb-1">Surface field</div>
