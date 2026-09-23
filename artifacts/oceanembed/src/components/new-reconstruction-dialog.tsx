@@ -266,29 +266,29 @@ export function NewReconstructionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl border border-[#133458]/15 bg-[#FAF7BB]/95 backdrop-blur-2xl p-0 text-[#133458] rounded-2xl shadow-[0_25px_60px_-15px_rgba(19,52,88,0.3),inset_0_1px_1px_rgba(255,255,255,0.7)] max-h-[92vh] flex flex-col overflow-hidden">
+      <DialogContent className="max-w-3xl border border-white/80 bg-[#FAF7BB]/90 backdrop-blur-3xl p-0 text-[#133458] rounded-3xl shadow-[0_30px_90px_-15px_rgba(19,52,88,0.35),0_0_0_1px_rgba(255,255,255,0.7)_inset] max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <DialogHeader className="border-b border-[#D8D0B3] bg-[#133458] px-6 py-4 text-[#FAF7BB]">
+        <DialogHeader className="border-b border-[#133458]/10 bg-linear-to-r from-[#133458] to-[#1c4573] px-7 py-5 pr-16 text-[#FAF7BB] relative">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-[10px] uppercase tracking-[.2em] text-[#D99B21] font-data">
               <Sparkles size={13} /> North Indian Ocean Model Inference
             </div>
-            <span className="rounded bg-[#D99B21]/20 border border-[#D99B21]/40 px-2 py-0.5 font-data text-[10px] font-semibold text-[#FAF7BB]">
+            <span className="rounded-full bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1 font-data text-[10px] font-medium text-[#FAF7BB] shadow-xs mr-2">
               CNN-Temporal (OceanEmbed)
             </span>
           </div>
-          <DialogTitle className="font-display text-2xl font-normal tracking-tight text-[#FAF7BB]">
+          <DialogTitle className="font-display text-2xl font-normal tracking-tight text-[#FAF7BB] mt-1">
             New Subsurface Reconstruction
           </DialogTitle>
-          <DialogDescription className="text-xs text-[#FAF7BB]/70">
+          <DialogDescription className="text-xs text-[#FAF7BB]/75 mt-0.5">
             Reconstruct temperature down to 2000m using CNN spatial patch encoder and temporal/positional encodings.
           </DialogDescription>
         </DialogHeader>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 sm:p-7 space-y-5">
           {!result ? (
-            <div className="space-y-6 animate-rise">
+            <div className="space-y-5 animate-rise">
               {/* Preset Chips */}
               <div>
                 <div className="mb-2 text-xs font-semibold text-[#133458] flex items-center justify-between">
@@ -303,10 +303,10 @@ export function NewReconstructionDialog({
                         key={p.name}
                         type="button"
                         onClick={() => applyPreset(p)}
-                        className={`rounded-sm border px-2.5 py-2 text-left text-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95 active:translate-y-0 ${
+                        className={`rounded-xl border px-3 py-2.5 text-left text-xs transition-all duration-200 backdrop-blur-md shadow-xs hover:-translate-y-0.5 hover:shadow-md active:scale-95 active:translate-y-0 ${
                           active
-                            ? 'border-[#133458] bg-[#133458] text-[#FAF7BB] ring-1 ring-[#D99B21]'
-                            : 'border-[#D8D0B3] bg-[#f5f1d6] text-[#133458] hover:bg-[#eae3c2]'
+                            ? 'border-[#133458] bg-[#133458] text-[#FAF7BB] shadow-md ring-2 ring-[#D99B21]/50'
+                            : 'border-white/80 bg-white/60 text-[#133458] hover:bg-white/85 hover:border-white'
                         }`}
                       >
                         <div className="font-semibold truncate">{p.name.split(' ')[0]}</div>
@@ -318,15 +318,17 @@ export function NewReconstructionDialog({
               </div>
 
               {/* Section 1: Location & Coordinates */}
-              <div className="rounded-sm border border-[#D8D0B3] bg-[#fffdf0] p-4">
-                <div className="mb-3 flex items-center gap-2 text-xs font-bold text-[#133458]">
-                  <MapPin size={15} className="text-[#838921]" />
+              <div className="rounded-2xl border border-white/80 bg-white/60 backdrop-blur-xl p-5 shadow-[0_4px_20px_-4px_rgba(19,52,88,0.06),0_1px_1px_rgba(255,255,255,0.8)_inset]">
+                <div className="mb-3.5 flex items-center gap-2.5 text-xs font-bold text-[#133458]">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#838921]/15 text-[#838921]">
+                    <MapPin size={14} />
+                  </div>
                   <span>1. Location Coordinates</span>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3.5 sm:grid-cols-2">
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#536675] mb-1">
-                      Latitude (°N) <span className="font-data font-normal">[5.0 to 30.0]</span>
+                    <label className="block text-[11px] font-semibold text-[#536675] mb-1.5">
+                      Latitude (°N) <span className="font-data font-normal text-[#536675]/80">[5.0 to 30.0]</span>
                     </label>
                     <input
                       type="number"
@@ -335,12 +337,12 @@ export function NewReconstructionDialog({
                       max="30"
                       value={lat}
                       onChange={(e) => setLat(parseFloat(e.target.value) || 5)}
-                      className="w-full border border-[#D8D0B3] bg-[#FAF7BB] px-3 py-1.5 font-data text-xs text-[#133458] outline-none focus:border-[#133458]"
+                      className="w-full rounded-xl border border-[#133458]/15 bg-white/80 backdrop-blur-md px-3.5 py-2 font-data text-xs text-[#133458] shadow-xs outline-none transition-all focus:border-[#133458] focus:bg-white focus:ring-2 focus:ring-[#D99B21]/30"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#536675] mb-1">
-                      Longitude (°E) <span className="font-data font-normal">[45.0 to 105.0]</span>
+                    <label className="block text-[11px] font-semibold text-[#536675] mb-1.5">
+                      Longitude (°E) <span className="font-data font-normal text-[#536675]/80">[45.0 to 105.0]</span>
                     </label>
                     <input
                       type="number"
@@ -349,36 +351,38 @@ export function NewReconstructionDialog({
                       max="105"
                       value={lon}
                       onChange={(e) => setLon(parseFloat(e.target.value) || 45)}
-                      className="w-full border border-[#D8D0B3] bg-[#FAF7BB] px-3 py-1.5 font-data text-xs text-[#133458] outline-none focus:border-[#133458]"
+                      className="w-full rounded-xl border border-[#133458]/15 bg-white/80 backdrop-blur-md px-3.5 py-2 font-data text-xs text-[#133458] shadow-xs outline-none transition-all focus:border-[#133458] focus:bg-white focus:ring-2 focus:ring-[#D99B21]/30"
                     />
                   </div>
                 </div>
-                <div className="mt-2 flex items-center justify-between text-[11px] text-[#536675]">
-                  <span>Target Basin: <strong className="text-[#133458]">{determineSubregion(lat, lon)}</strong></span>
-                  <span className="font-data text-[10px]">Evaluation Domain: NIO</span>
+                <div className="mt-3 flex items-center justify-between text-[11px] text-[#536675] pt-2 border-t border-[#133458]/8">
+                  <span>Target Basin: <strong className="text-[#133458] font-semibold">{determineSubregion(lat, lon)}</strong></span>
+                  <span className="font-data text-[10px] text-[#838921] font-medium">Evaluation Domain: NIO</span>
                 </div>
               </div>
 
               {/* Section 2: Date Selection */}
-              <div className="rounded-sm border border-[#D8D0B3] bg-[#fffdf0] p-4">
-                <div className="mb-3 flex items-center gap-2 text-xs font-bold text-[#133458]">
-                  <Calendar size={15} className="text-[#838921]" />
+              <div className="rounded-2xl border border-white/80 bg-white/60 backdrop-blur-xl p-5 shadow-[0_4px_20px_-4px_rgba(19,52,88,0.06),0_1px_1px_rgba(255,255,255,0.8)_inset]">
+                <div className="mb-3.5 flex items-center gap-2.5 text-xs font-bold text-[#133458]">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#838921]/15 text-[#838921]">
+                    <Calendar size={14} />
+                  </div>
                   <span>2. Observation Date</span>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 items-center">
+                <div className="grid gap-3.5 sm:grid-cols-2 items-center">
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#536675] mb-1">
+                    <label className="block text-[11px] font-semibold text-[#536675] mb-1.5">
                       Date (Study Period: Jan 2023)
                     </label>
                     <input
                       type="date"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
-                      className="w-full border border-[#D8D0B3] bg-[#FAF7BB] px-3 py-1.5 font-data text-xs text-[#133458] outline-none focus:border-[#133458]"
+                      className="w-full rounded-xl border border-[#133458]/15 bg-white/80 backdrop-blur-md px-3.5 py-2 font-data text-xs text-[#133458] shadow-xs outline-none transition-all focus:border-[#133458] focus:bg-white focus:ring-2 focus:ring-[#D99B21]/30"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#536675] mb-1">
+                    <label className="block text-[11px] font-semibold text-[#536675] mb-1.5">
                       Reconstruction Name (Optional)
                     </label>
                     <input
@@ -386,38 +390,40 @@ export function NewReconstructionDialog({
                       placeholder={`e.g. ${determineSubregion(lat, lon)} Cast #1`}
                       value={customName}
                       onChange={(e) => setCustomName(e.target.value)}
-                      className="w-full border border-[#D8D0B3] bg-[#FAF7BB] px-3 py-1.5 text-xs text-[#133458] outline-none focus:border-[#133458]"
+                      className="w-full rounded-xl border border-[#133458]/15 bg-white/80 backdrop-blur-md px-3.5 py-2 text-xs text-[#133458] shadow-xs outline-none transition-all focus:border-[#133458] focus:bg-white focus:ring-2 focus:ring-[#D99B21]/30 placeholder:text-[#536675]/50"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Section 3: Depth Selection */}
-              <div className="rounded-sm border border-[#D8D0B3] bg-[#fffdf0] p-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#133458]">
-                    <Layers size={15} className="text-[#838921]" />
+              <div className="rounded-2xl border border-white/80 bg-white/60 backdrop-blur-xl p-5 shadow-[0_4px_20px_-4px_rgba(19,52,88,0.06),0_1px_1px_rgba(255,255,255,0.8)_inset]">
+                <div className="mb-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 text-xs font-bold text-[#133458]">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#838921]/15 text-[#838921]">
+                      <Layers size={14} />
+                    </div>
                     <span>3. Target Depths ({selectedDepths.length} selected)</span>
                   </div>
-                  <div className="flex gap-2 text-[10px]">
+                  <div className="flex gap-2 text-[11px]">
                     <button
                       type="button"
                       onClick={selectStandardDepths}
-                      className="text-[#838921] hover:underline font-semibold"
+                      className="text-[#838921] hover:text-[#133458] font-semibold transition-colors"
                     >
                       Standard (8)
                     </button>
-                    <span>·</span>
+                    <span className="text-[#536675]/40">·</span>
                     <button
                       type="button"
                       onClick={selectAllDepths}
-                      className="text-[#838921] hover:underline font-semibold"
+                      className="text-[#838921] hover:text-[#133458] font-semibold transition-colors"
                     >
                       All (22)
                     </button>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5 mt-3">
+                <div className="flex flex-wrap gap-2 mt-3">
                   {ALL_DEPTHS.map((d) => {
                     const isSelected = selectedDepths.includes(d);
                     return (
@@ -425,10 +431,10 @@ export function NewReconstructionDialog({
                         key={d}
                         type="button"
                         onClick={() => toggleDepth(d)}
-                        className={`rounded-sm px-2 py-1 font-data text-[11px] transition-all duration-150 hover:scale-105 active:scale-90 ${
+                        className={`rounded-lg px-2.5 py-1.5 font-data text-xs transition-all duration-150 hover:scale-105 active:scale-95 ${
                           isSelected
                             ? 'bg-[#133458] text-[#FAF7BB] font-semibold shadow-xs'
-                            : 'bg-[#e8e2ba] text-[#536675] hover:bg-[#ded6a7]'
+                            : 'border border-white/80 bg-white/60 text-[#536675] hover:bg-white/90 hover:text-[#133458]'
                         }`}
                       >
                         {d}m
@@ -439,17 +445,19 @@ export function NewReconstructionDialog({
               </div>
 
               {/* Section 4: Surface Parameters */}
-              <div className="rounded-sm border border-[#D8D0B3] bg-[#fffdf0] p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#133458]">
-                    <Sliders size={15} className="text-[#838921]" />
+              <div className="rounded-2xl border border-white/80 bg-white/60 backdrop-blur-xl p-5 shadow-[0_4px_20px_-4px_rgba(19,52,88,0.06),0_1px_1px_rgba(255,255,255,0.8)_inset]">
+                <div className="mb-3.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 text-xs font-bold text-[#133458]">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#838921]/15 text-[#838921]">
+                      <Sliders size={14} />
+                    </div>
                     <span>4. Surface Observations (CNN Inputs)</span>
                   </div>
-                  <span className="font-data text-[10px] text-[#838921]">Matched from satellite raster</span>
+                  <span className="font-data text-[10px] text-[#838921] font-medium">Matched from satellite raster</span>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-3.5 sm:grid-cols-3">
                   <div>
-                    <label className="block text-[10px] font-semibold text-[#536675] mb-1">
+                    <label className="block text-[11px] font-semibold text-[#536675] mb-1.5">
                       SST (°C)
                     </label>
                     <input
@@ -457,11 +465,11 @@ export function NewReconstructionDialog({
                       step="0.1"
                       value={sst}
                       onChange={(e) => setSst(parseFloat(e.target.value) || 27.5)}
-                      className="w-full border border-[#D8D0B3] bg-[#FAF7BB] px-3 py-1 font-data text-xs text-[#133458] outline-none"
+                      className="w-full rounded-xl border border-[#133458]/15 bg-white/80 backdrop-blur-md px-3.5 py-2 font-data text-xs text-[#133458] shadow-xs outline-none transition-all focus:border-[#133458] focus:bg-white focus:ring-2 focus:ring-[#D99B21]/30"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-semibold text-[#536675] mb-1">
+                    <label className="block text-[11px] font-semibold text-[#536675] mb-1.5">
                       SSHa (m)
                     </label>
                     <input
@@ -469,11 +477,11 @@ export function NewReconstructionDialog({
                       step="0.01"
                       value={ssha}
                       onChange={(e) => setSsha(parseFloat(e.target.value) || 0.0)}
-                      className="w-full border border-[#D8D0B3] bg-[#FAF7BB] px-3 py-1 font-data text-xs text-[#133458] outline-none"
+                      className="w-full rounded-xl border border-[#133458]/15 bg-white/80 backdrop-blur-md px-3.5 py-2 font-data text-xs text-[#133458] shadow-xs outline-none transition-all focus:border-[#133458] focus:bg-white focus:ring-2 focus:ring-[#D99B21]/30"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-semibold text-[#536675] mb-1">
+                    <label className="block text-[11px] font-semibold text-[#536675] mb-1.5">
                       SSS (psu)
                     </label>
                     <input
@@ -481,17 +489,19 @@ export function NewReconstructionDialog({
                       step="0.1"
                       value={sss}
                       onChange={(e) => setSss(parseFloat(e.target.value) || 35.0)}
-                      className="w-full border border-[#D8D0B3] bg-[#FAF7BB] px-3 py-1 font-data text-xs text-[#133458] outline-none"
+                      className="w-full rounded-xl border border-[#133458]/15 bg-white/80 backdrop-blur-md px-3.5 py-2 font-data text-xs text-[#133458] shadow-xs outline-none transition-all focus:border-[#133458] focus:bg-white focus:ring-2 focus:ring-[#D99B21]/30"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Section 5: Reference Images (Optional) */}
-              <div className="rounded-sm border border-[#D8D0B3] bg-[#fffdf0] p-4 transition-all duration-200 hover:border-[#133458]/40">
+              <div className="rounded-2xl border border-white/80 bg-white/60 backdrop-blur-xl p-5 shadow-[0_4px_20px_-4px_rgba(19,52,88,0.06),0_1px_1px_rgba(255,255,255,0.8)_inset] transition-all duration-200">
                 <div className="mb-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#133458]">
-                    <ImageIcon size={15} className="text-[#838921]" />
+                  <div className="flex items-center gap-2.5 text-xs font-bold text-[#133458]">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#838921]/15 text-[#838921]">
+                      <ImageIcon size={14} />
+                    </div>
                     <span>5. Reference Imagery</span>
                   </div>
                   <span className="font-data text-[10px] text-[#536675]">
@@ -515,11 +525,11 @@ export function NewReconstructionDialog({
                 {images.length === 0 ? (
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex flex-col items-center justify-center border-2 border-dashed border-[#D8D0B3] hover:border-[#838921] bg-[#FAF7BB]/50 hover:bg-[#FAF7BB] p-5 text-center cursor-pointer transition-all duration-200 group rounded-xs"
+                    className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#133458]/20 hover:border-[#838921] bg-white/40 hover:bg-white/75 p-6 text-center cursor-pointer transition-all duration-200 group shadow-xs"
                     data-testid="dropzone-add-images"
                   >
-                    <div className="rounded-full bg-[#133458]/10 group-hover:bg-[#133458]/15 p-2.5 mb-2 transition-colors">
-                      <UploadCloud size={20} className="text-[#133458]" />
+                    <div className="rounded-full bg-[#133458]/10 group-hover:bg-[#133458]/15 p-3 mb-2.5 transition-colors">
+                      <UploadCloud size={22} className="text-[#133458]" />
                     </div>
                     <div className="text-xs font-semibold text-[#133458] group-hover:text-[#838921] transition-colors">
                       Click to browse or drop reference images
@@ -530,20 +540,20 @@ export function NewReconstructionDialog({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {images.map((img) => (
                         <div
                           key={img.id}
-                          className="relative group rounded-sm border border-[#D8D0B3] bg-[#FAF7BB] p-1.5 overflow-hidden shadow-xs hover:border-[#133458] transition-colors"
+                          className="relative group rounded-xl border border-white/80 bg-white/80 p-2 overflow-hidden shadow-xs hover:border-[#133458]/30 transition-all"
                         >
-                          <div className="h-24 w-full overflow-hidden rounded-xs bg-[#133458]/5 flex items-center justify-center">
+                          <div className="h-24 w-full overflow-hidden rounded-lg bg-[#133458]/5 flex items-center justify-center">
                             <img
                               src={img.url}
                               alt={img.name}
                               className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
                             />
                           </div>
-                          <div className="mt-1.5 px-1 flex items-center justify-between">
+                          <div className="mt-2 px-1 flex items-center justify-between">
                             <div className="truncate text-[10px] font-semibold text-[#133458] max-w-[120px]" title={img.name}>
                               {img.name}
                             </div>
@@ -555,7 +565,7 @@ export function NewReconstructionDialog({
                               e.stopPropagation();
                               removeImage(img.id);
                             }}
-                            className="absolute right-2.5 top-2.5 rounded-full bg-[#133458]/80 text-[#FAF7BB] p-1 hover:bg-red-600 transition-colors opacity-90 group-hover:opacity-100 shadow-sm"
+                            className="absolute right-3 top-3 rounded-full bg-[#133458]/85 text-[#FAF7BB] p-1 hover:bg-red-600 transition-colors opacity-90 group-hover:opacity-100 shadow-sm"
                             title="Remove image"
                           >
                             <X size={12} />
@@ -567,7 +577,7 @@ export function NewReconstructionDialog({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-[#838921] hover:underline"
+                        className="flex items-center gap-1.5 text-xs font-semibold text-[#838921] hover:text-[#133458] transition-colors"
                         data-testid="button-add-more-images"
                       >
                         <UploadCloud size={13} /> Add more images
@@ -581,18 +591,18 @@ export function NewReconstructionDialog({
             /* Results View */
             <div className="space-y-5 animate-in fade-in duration-300">
               {/* Run summary badge */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#D8D0B3] pb-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#133458]/10 pb-3">
                 <div>
-                  <span className="font-data text-[10px] uppercase text-[#D99B21] tracking-wider">
+                  <span className="font-data text-[10px] uppercase text-[#D99B21] tracking-wider font-semibold">
                     Reconstruction Generated
                   </span>
-                  <h3 className="font-display text-2xl text-[#133458]">{result.name}</h3>
-                  <div className="font-data text-xs text-[#536675]">
+                  <h3 className="font-display text-2xl text-[#133458] font-medium tracking-tight">{result.name}</h3>
+                  <div className="font-data text-xs text-[#536675] mt-0.5">
                     {result.subregion} · {result.latitude}°N, {result.longitude}°E · {result.date}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-[#e5ebd3] px-3 py-1 text-[11px] font-semibold text-[#536b35] flex items-center gap-1.5">
+                  <span className="rounded-full bg-[#838921]/15 border border-[#838921]/20 px-3.5 py-1 text-[11px] font-semibold text-[#838921] flex items-center gap-1.5 shadow-xs">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#838921]" /> Inference complete
                   </span>
                 </div>
@@ -600,21 +610,21 @@ export function NewReconstructionDialog({
 
               {/* Metrics cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="border border-[#D8D0B3] bg-[#fffdf0] p-3 rounded-sm">
-                  <div className="font-data text-[10px] text-[#536675] uppercase">Surface Temp</div>
-                  <div className="mt-1 font-data text-xl text-[#133458] font-semibold">{result.sst}°C</div>
+                <div className="rounded-2xl border border-white/80 bg-white/60 backdrop-blur-xl p-4 shadow-[0_4px_20px_-4px_rgba(19,52,88,0.06),0_1px_1px_rgba(255,255,255,0.8)_inset]">
+                  <div className="font-data text-[10px] text-[#536675] uppercase font-semibold">Surface Temp</div>
+                  <div className="mt-1 font-data text-xl text-[#133458] font-bold">{result.sst}°C</div>
                 </div>
-                <div className="border border-[#D8D0B3] bg-[#fffdf0] p-3 rounded-sm">
-                  <div className="font-data text-[10px] text-[#536675] uppercase">Thermocline (Z20)</div>
-                  <div className="mt-1 font-data text-xl text-[#D99B21] font-semibold">{result.z20} m</div>
+                <div className="rounded-2xl border border-white/80 bg-white/60 backdrop-blur-xl p-4 shadow-[0_4px_20px_-4px_rgba(19,52,88,0.06),0_1px_1px_rgba(255,255,255,0.8)_inset]">
+                  <div className="font-data text-[10px] text-[#536675] uppercase font-semibold">Thermocline (Z20)</div>
+                  <div className="mt-1 font-data text-xl text-[#D99B21] font-bold">{result.z20} m</div>
                 </div>
-                <div className="border border-[#D8D0B3] bg-[#fffdf0] p-3 rounded-sm">
-                  <div className="font-data text-[10px] text-[#536675] uppercase">Est. Test RMSE</div>
-                  <div className="mt-1 font-data text-xl text-[#838921] font-semibold">{result.rmse}°C</div>
+                <div className="rounded-2xl border border-white/80 bg-white/60 backdrop-blur-xl p-4 shadow-[0_4px_20px_-4px_rgba(19,52,88,0.06),0_1px_1px_rgba(255,255,255,0.8)_inset]">
+                  <div className="font-data text-[10px] text-[#536675] uppercase font-semibold">Est. Test RMSE</div>
+                  <div className="mt-1 font-data text-xl text-[#838921] font-bold">{result.rmse}°C</div>
                 </div>
-                <div className="border border-[#D8D0B3] bg-[#fffdf0] p-3 rounded-sm">
-                  <div className="font-data text-[10px] text-[#536675] uppercase">Deep Temp (2000m)</div>
-                  <div className="mt-1 font-data text-xl text-[#133458] font-semibold">
+                <div className="rounded-2xl border border-white/80 bg-white/60 backdrop-blur-xl p-4 shadow-[0_4px_20px_-4px_rgba(19,52,88,0.06),0_1px_1px_rgba(255,255,255,0.8)_inset]">
+                  <div className="font-data text-[10px] text-[#536675] uppercase font-semibold">Deep Temp (2000m)</div>
+                  <div className="mt-1 font-data text-xl text-[#133458] font-bold">
                     {result.temperatures[result.temperatures.length - 1]}°C
                   </div>
                 </div>
@@ -623,9 +633,9 @@ export function NewReconstructionDialog({
               {/* Profile Chart & Table Side-by-Side */}
               <div className="grid gap-5 md:grid-cols-[1.2fr_1fr] items-start">
                 {/* SVG Profile Chart */}
-                <div className="rounded-sm border border-[#D8D0B3] bg-[#133458] p-4 text-[#FAF7BB]">
+                <div className="rounded-2xl border border-white/20 bg-linear-to-b from-[#133458] to-[#0c223c] p-5 text-[#FAF7BB] shadow-md">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-data text-[10px] uppercase text-[#D99B21]">Vertical Temperature Profile</span>
+                    <span className="font-data text-[10px] uppercase text-[#D99B21] font-semibold">Vertical Temperature Profile</span>
                     <span className="font-data text-[9px] text-[#FAF7BB]/60">Depth (m) vs Temp (°C)</span>
                   </div>
                   <div className="h-64 w-full">
@@ -681,14 +691,14 @@ export function NewReconstructionDialog({
                   </div>
                   <div className="mt-2 flex justify-between font-data text-[9px] text-[#FAF7BB]/60">
                     <span>2°C</span>
-                    <span className="text-[#D99B21]">Reconstructed Profile</span>
+                    <span className="text-[#D99B21] font-medium">Reconstructed Profile</span>
                     <span>30°C</span>
                   </div>
                 </div>
 
                 {/* Values Table */}
-                <div className="rounded-sm border border-[#D8D0B3] bg-[#fffdf0] p-4 max-h-72 overflow-y-auto">
-                  <div className="text-xs font-semibold text-[#133458] mb-2 flex items-center justify-between">
+                <div className="rounded-2xl border border-white/80 bg-white/60 backdrop-blur-xl p-5 max-h-72 overflow-y-auto shadow-xs">
+                  <div className="text-xs font-semibold text-[#133458] mb-2.5 flex items-center justify-between">
                     <span>Reconstructed Values</span>
                     <span className="font-data text-[10px] text-[#536675]">
                       {result.depths.length} depth levels
@@ -696,16 +706,16 @@ export function NewReconstructionDialog({
                   </div>
                   <table className="w-full text-left font-data text-xs">
                     <thead>
-                      <tr className="border-b border-[#D8D0B3] text-[9px] uppercase text-[#536675]">
-                        <th className="py-1.5">Depth</th>
-                        <th className="py-1.5 text-right">Temp</th>
+                      <tr className="border-b border-[#133458]/10 text-[9px] uppercase text-[#536675]">
+                        <th className="py-1.5 font-semibold">Depth</th>
+                        <th className="py-1.5 text-right font-semibold">Temp</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#D8D0B3]/50">
+                    <tbody className="divide-y divide-[#133458]/5">
                       {result.depths.map((d, idx) => (
-                        <tr key={d} className="hover:bg-[#FAF7BB]/50">
-                          <td className="py-1 text-[#536675]">{d} m</td>
-                          <td className="py-1 text-right font-semibold text-[#133458]">
+                        <tr key={d} className="hover:bg-white/60 transition-colors">
+                          <td className="py-1.5 text-[#536675]">{d} m</td>
+                          <td className="py-1.5 text-right font-semibold text-[#133458]">
                             {result.temperatures[idx]}°C
                           </td>
                         </tr>
@@ -716,14 +726,14 @@ export function NewReconstructionDialog({
               </div>
 
               {images.length > 0 && (
-                <div className="rounded-sm border border-[#D8D0B3] bg-[#fffdf0] p-3">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#536675] mb-2 flex items-center gap-1.5">
+                <div className="rounded-2xl border border-white/80 bg-white/60 backdrop-blur-xl p-4 shadow-xs">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#536675] mb-2.5 flex items-center gap-1.5">
                     <ImageIcon size={13} className="text-[#838921]" /> Attached Reference Images ({images.length})
                   </div>
                   <div className="flex gap-2.5 overflow-x-auto pb-1">
                     {images.map((img) => (
-                      <div key={img.id} className="shrink-0 flex items-center gap-2 border border-[#D8D0B3] bg-[#FAF7BB] p-1 rounded-xs">
-                        <img src={img.url} alt={img.name} className="h-10 w-12 object-cover rounded-xs" />
+                      <div key={img.id} className="shrink-0 flex items-center gap-2.5 border border-white/80 bg-white/80 p-1.5 rounded-xl shadow-xs">
+                        <img src={img.url} alt={img.name} className="h-10 w-12 object-cover rounded-lg" />
                         <div className="text-[10px] font-semibold text-[#133458] max-w-[120px] truncate pr-1">{img.name}</div>
                       </div>
                     ))}
@@ -735,13 +745,13 @@ export function NewReconstructionDialog({
         </div>
 
         {/* Footer Actions */}
-        <div className="border-t border-[#D8D0B3] bg-[#f5f1d6] px-6 py-4 flex items-center justify-between">
+        <div className="border-t border-[#133458]/10 bg-white/65 backdrop-blur-xl px-7 py-4.5 flex items-center justify-between">
           {!result ? (
             <>
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="px-4 py-2 text-xs font-semibold text-[#536675] hover:text-[#133458]"
+                className="rounded-xl px-4 py-2 text-xs font-semibold text-[#536675] hover:text-[#133458] hover:bg-white/60 transition-all duration-150"
                 disabled={isRunning}
               >
                 Cancel
@@ -750,7 +760,7 @@ export function NewReconstructionDialog({
                 type="button"
                 onClick={handleRunReconstruction}
                 disabled={isRunning}
-                className="flex items-center gap-2 bg-[#133458] px-5 py-2.5 text-xs font-bold text-[#FAF7BB] hover:bg-[#1f4874] transition-all duration-200 hover:shadow-lg hover:shadow-[#133458]/25 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                className="rounded-xl flex items-center gap-2 bg-[#133458] px-6 py-2.5 text-xs font-bold text-[#FAF7BB] hover:bg-[#1f4874] transition-all duration-200 shadow-md shadow-[#133458]/25 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
               >
                 {isRunning ? (
                   <>
@@ -770,7 +780,7 @@ export function NewReconstructionDialog({
               <button
                 type="button"
                 onClick={resetDialog}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#536675] hover:text-[#133458] transition-colors"
+                className="rounded-xl flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#536675] hover:text-[#133458] hover:bg-white/60 transition-all duration-150"
               >
                 <RotateCcw size={13} />
                 <span>Configure Another</span>
@@ -778,7 +788,7 @@ export function NewReconstructionDialog({
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="flex items-center gap-2 bg-[#838921] px-5 py-2.5 text-xs font-bold text-[#FAF7BB] hover:bg-[#6c711a] transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
+                className="rounded-xl flex items-center gap-2 bg-[#838921] px-6 py-2.5 text-xs font-bold text-[#FAF7BB] hover:bg-[#6c711a] transition-all duration-200 shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
               >
                 <Check size={14} />
                 <span>Done</span>
