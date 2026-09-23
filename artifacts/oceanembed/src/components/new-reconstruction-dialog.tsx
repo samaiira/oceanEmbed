@@ -19,8 +19,6 @@ import {
   CheckSquare,
   Square,
   TrendingDown,
-  Image as ImageIcon,
-  UploadCloud,
   X,
 } from 'lucide-react';
 
@@ -89,26 +87,6 @@ export function NewReconstructionDialog({
       }
     }
   }, [open, initialLat, initialLon, initialSst]);
-
-  // Optional Reference Images (Visual only)
-  const [images, setImages] = useState<{ id: string; name: string; url: string; size: string }[]>([]);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const newFiles = Array.from(e.target.files).map((file) => ({
-        id: Math.random().toString(36).substring(7),
-        name: file.name,
-        url: URL.createObjectURL(file),
-        size: (file.size / 1024).toFixed(1) + ' KB',
-      }));
-      setImages((prev) => [...prev, ...newFiles]);
-    }
-  };
-
-  const removeImage = (id: string) => {
-    setImages((prev) => prev.filter((img) => img.id !== id));
-  };
 
   // Processing & Result State
   const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -494,98 +472,6 @@ export function NewReconstructionDialog({
                   </div>
                 </div>
               </div>
-
-              {/* Section 5: Reference Images (Optional) */}
-              <div className="rounded-2xl border border-white/80 bg-white/60 backdrop-blur-xl p-5 shadow-[0_4px_20px_-4px_rgba(19,52,88,0.06),0_1px_1px_rgba(255,255,255,0.8)_inset] transition-all duration-200">
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5 text-xs font-bold text-[#133458]">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#838921]/15 text-[#838921]">
-                      <ImageIcon size={14} />
-                    </div>
-                    <span>5. Reference Imagery</span>
-                  </div>
-                  <span className="font-data text-[10px] text-[#536675]">
-                    {images.length} {images.length === 1 ? 'image' : 'images'} attached
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#536675] mb-3 leading-relaxed">
-                  Attach satellite raster scans, thermal maps, or bathymetric plots for visual reference.
-                </p>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleImageChange}
-                  data-testid="input-reconstruction-images"
-                />
-
-                {images.length === 0 ? (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#133458]/20 hover:border-[#838921] bg-white/40 hover:bg-white/75 p-6 text-center cursor-pointer transition-all duration-200 group shadow-xs"
-                    data-testid="dropzone-add-images"
-                  >
-                    <div className="rounded-full bg-[#133458]/10 group-hover:bg-[#133458]/15 p-3 mb-2.5 transition-colors">
-                      <UploadCloud size={22} className="text-[#133458]" />
-                    </div>
-                    <div className="text-xs font-semibold text-[#133458] group-hover:text-[#838921] transition-colors">
-                      Click to browse or drop reference images
-                    </div>
-                    <div className="text-[10px] text-[#536675] mt-1 font-data">
-                      PNG, JPG, WEBP · Field notes & satellite imagery
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {images.map((img) => (
-                        <div
-                          key={img.id}
-                          className="relative group rounded-xl border border-white/80 bg-white/80 p-2 overflow-hidden shadow-xs hover:border-[#133458]/30 transition-all"
-                        >
-                          <div className="h-24 w-full overflow-hidden rounded-lg bg-[#133458]/5 flex items-center justify-center">
-                            <img
-                              src={img.url}
-                              alt={img.name}
-                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
-                            />
-                          </div>
-                          <div className="mt-2 px-1 flex items-center justify-between">
-                            <div className="truncate text-[10px] font-semibold text-[#133458] max-w-[120px]" title={img.name}>
-                              {img.name}
-                            </div>
-                            <span className="font-data text-[9px] text-[#536675]">{img.size}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeImage(img.id);
-                            }}
-                            className="absolute right-3 top-3 rounded-full bg-[#133458]/85 text-[#FAF7BB] p-1 hover:bg-red-600 transition-colors opacity-90 group-hover:opacity-100 shadow-sm"
-                            title="Remove image"
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-[#838921] hover:text-[#133458] transition-colors"
-                        data-testid="button-add-more-images"
-                      >
-                        <UploadCloud size={13} /> Add more images
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
           ) : (
             /* Results View */
@@ -724,22 +610,6 @@ export function NewReconstructionDialog({
                   </table>
                 </div>
               </div>
-
-              {images.length > 0 && (
-                <div className="rounded-2xl border border-white/80 bg-white/60 backdrop-blur-xl p-4 shadow-xs">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#536675] mb-2.5 flex items-center gap-1.5">
-                    <ImageIcon size={13} className="text-[#838921]" /> Attached Reference Images ({images.length})
-                  </div>
-                  <div className="flex gap-2.5 overflow-x-auto pb-1">
-                    {images.map((img) => (
-                      <div key={img.id} className="shrink-0 flex items-center gap-2.5 border border-white/80 bg-white/80 p-1.5 rounded-xl shadow-xs">
-                        <img src={img.url} alt={img.name} className="h-10 w-12 object-cover rounded-lg" />
-                        <div className="text-[10px] font-semibold text-[#133458] max-w-[120px] truncate pr-1">{img.name}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
