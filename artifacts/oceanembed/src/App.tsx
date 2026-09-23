@@ -217,14 +217,14 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   return (
     <>
-      {open && <button aria-label="Close navigation" onClick={onClose} className="fixed inset-0 z-30 bg-[#133458]/35 md:hidden" data-testid="button-close-overlay" />}
-      <aside className={`fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col bg-[#133458] px-5 py-6 text-[#FAF7BB] transition-transform duration-300 md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+      {open && <button aria-label="Close navigation" onClick={onClose} className="fixed inset-0 z-30 bg-[#133458]/40 backdrop-blur-sm md:hidden" data-testid="button-close-overlay" />}
+      <aside className={`fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col bg-[#133458]/95 backdrop-blur-2xl border-r border-[#FAF7BB]/12 px-5 py-6 text-[#FAF7BB] transition-transform duration-300 md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'} shadow-[4px_0_30px_rgba(0,0,0,0.18)]`}>
         <div className="flex items-center justify-between">
           <Logo light />
-          <button onClick={onClose} className="rounded-sm p-1 text-[#FAF7BB]/60 hover:text-[#FAF7BB] md:hidden" aria-label="Close navigation" data-testid="button-close-navigation"><X size={18} /></button>
+          <button onClick={onClose} className="rounded-md p-1.5 text-[#FAF7BB]/70 hover:text-[#FAF7BB] hover:bg-[#FAF7BB]/10 transition-colors md:hidden" aria-label="Close navigation" data-testid="button-close-navigation"><X size={18} /></button>
         </div>
         <div className="mt-12">
-          <div className="mb-3 px-3 font-data text-[9px] uppercase tracking-[.2em] text-[#FAF7BB]/40">Workspace</div>
+          <div className="mb-3 px-3 font-data text-[9px] uppercase tracking-[.2em] text-[#FAF7BB]/50">Workspace</div>
           <nav className="space-y-1">
             {navItems.map(({ label, href, icon: NavIcon }) => {
               const active = location === href;
@@ -233,46 +233,46 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
                   key={href}
                   href={href}
                   onClick={onClose}
-                  className={`group flex items-center gap-3 rounded-sm px-3 py-2.5 text-[13px] transition-colors ${active ? 'bg-[#FAF7BB] text-[#133458]' : 'text-[#FAF7BB]/70 hover:bg-[#FAF7BB]/10 hover:text-[#FAF7BB]'}`}
+                  className={`group flex items-center gap-3 rounded-md px-3 py-2.5 text-[13px] font-medium transition-all active:scale-[0.98] ${active ? 'bg-[#FAF7BB] text-[#133458] shadow-sm font-semibold' : 'text-[#FAF7BB]/75 hover:bg-[#FAF7BB]/10 hover:text-[#FAF7BB]'}`}
                   data-testid={`link-nav-${label.toLowerCase().replaceAll(' ', '-')}`}
                 >
-                  <NavIcon size={16} strokeWidth={active ? 2 : 1.5} />
+                  <NavIcon size={16} strokeWidth={active ? 2.2 : 1.7} />
                   <span>{label}</span>
-                  {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#D99B21]" />}
+                  {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#D99B21] shadow-[0_0_8px_#D99B21]" />}
                 </Link>
               );
             })}
           </nav>
-          <div className="mb-3 mt-10 px-3 font-data text-[9px] uppercase tracking-[.2em] text-[#FAF7BB]/40">System</div>
+          <div className="mb-3 mt-10 px-3 font-data text-[9px] uppercase tracking-[.2em] text-[#FAF7BB]/50">System</div>
           <Link
             href="/settings"
             onClick={onClose}
-            className={`flex items-center gap-3 rounded-sm px-3 py-2.5 text-[13px] ${location === '/settings' ? 'bg-[#FAF7BB] text-[#133458]' : 'text-[#FAF7BB]/70 hover:bg-[#FAF7BB]/10 hover:text-[#FAF7BB]'}`}
+            className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-[13px] font-medium transition-all active:scale-[0.98] ${location === '/settings' ? 'bg-[#FAF7BB] text-[#133458] shadow-sm font-semibold' : 'text-[#FAF7BB]/75 hover:bg-[#FAF7BB]/10 hover:text-[#FAF7BB]'}`}
             data-testid="link-nav-settings"
           >
-            <Settings2 size={16} strokeWidth={1.5} />
+            <Settings2 size={16} strokeWidth={1.7} />
             <span>Settings</span>
           </Link>
         </div>
-        <div className="mt-auto rounded-sm border border-[#FAF7BB]/15 bg-[#FAF7BB]/[.06] p-4">
-          <div className="flex items-center gap-2 text-[11px]">
-            <span className="h-2 w-2 rounded-full bg-[#9CAF68]" /> Supabase Connected
+        <div className="mt-auto rounded-lg border border-[#FAF7BB]/15 bg-[#FAF7BB]/[.06] p-4 backdrop-blur-sm">
+          <div className="flex items-center gap-2 text-[11px] font-medium">
+            <span className="h-2 w-2 rounded-full bg-[#9CAF68] shadow-[0_0_6px_#9CAF68]" /> Supabase Connected
           </div>
-          <div className="mt-2 font-data text-[9px] tracking-wide text-[#FAF7BB]/45 truncate" title="PostgreSQL: ysryoqotuyngtplyujqx">
+          <div className="mt-2 font-data text-[9px] tracking-wide text-[#FAF7BB]/55 truncate" title="PostgreSQL: ysryoqotuyngtplyujqx">
             DB: YSRYOQOTUYN... · LIVE
           </div>
         </div>
         <div className="mt-5 flex items-center gap-3 border-t border-[#FAF7BB]/15 pt-5">
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#D99B21] text-xs font-semibold text-[#133458]">{initials}</div>
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#D99B21] text-xs font-bold text-[#133458] shadow-sm">{initials}</div>
           <div className="min-w-0 flex-1">
             <div className="text-xs truncate font-semibold">{userName}</div>
-            <div className="font-data text-[9px] text-[#FAF7BB]/50 truncate font-mono" title={userId || ''}>
+            <div className="font-data text-[9px] text-[#FAF7BB]/60 truncate font-mono" title={userId || ''}>
               {userId ? `UID: ${userId.slice(0, 8)}...` : 'Research lead'}
             </div>
           </div>
           <button
             onClick={() => signOut()}
-            className="text-[#FAF7BB]/50 hover:text-[#FAF7BB] transition-colors p-1"
+            className="text-[#FAF7BB]/60 hover:text-[#FAF7BB] transition-colors p-1.5 rounded hover:bg-[#FAF7BB]/10"
             title="Sign out"
             aria-label="Sign out"
             data-testid="button-sidebar-signout"
@@ -297,7 +297,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
     <div className="oe-shell">
       <Sidebar open={drawer} onClose={() => setDrawer(false)} />
       <main className="min-h-[100dvh] md:pl-[248px]">
-        <header className="flex h-[72px] items-center justify-between border-b border-[#D8D0B3] bg-[#FAF7BB]/70 px-5 backdrop-blur md:px-10">
+        <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-[#D8D0B3]/50 bg-[#FAF7BB]/80 px-5 backdrop-blur-xl md:px-10 shadow-[0_4px_24px_-4px_rgba(19,52,88,0.04)]">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setDrawer(true)}
@@ -935,13 +935,13 @@ function Dashboard() {
             </div>
             <div className="flex items-center gap-3">
               {/* 3D Earth vs 2D Map Toggle */}
-              <div className="flex rounded-sm border border-[#D8D0B3] bg-[#FAF7BB] p-0.5 text-xs font-semibold text-[#133458]">
+              <div className="flex rounded-lg border border-[#133458]/12 bg-[#FAF7BB]/70 backdrop-blur-md p-1 text-xs font-semibold text-[#133458] shadow-inner">
                 <button
                   type="button"
                   onClick={() => setMapMode('3d')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-sm transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all active:scale-[0.97] ${
                     mapMode === '3d'
-                      ? 'bg-[#133458] text-[#FAF7BB] shadow-sm'
+                      ? 'bg-[#133458] text-[#FAF7BB] shadow-sm font-semibold'
                       : 'text-[#536675] hover:text-[#133458]'
                   }`}
                 >
@@ -950,9 +950,9 @@ function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setMapMode('2d')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-sm transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all active:scale-[0.97] ${
                     mapMode === '2d'
-                      ? 'bg-[#133458] text-[#FAF7BB] shadow-sm'
+                      ? 'bg-[#133458] text-[#FAF7BB] shadow-sm font-semibold'
                       : 'text-[#536675] hover:text-[#133458]'
                   }`}
                 >

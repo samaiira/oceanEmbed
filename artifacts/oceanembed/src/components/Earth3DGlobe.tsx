@@ -1024,7 +1024,7 @@ export function Earth3DGlobe({
         <button
           type="button"
           onClick={toggleMonitorFullscreen}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm border border-[#FAF7BB]/25 bg-[#0a1d33]/90 text-[#FAF7BB] hover:bg-[#133458] hover:border-[#D99B21] transition-all shadow-md backdrop-blur cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB] hover:bg-[#133458]/90 hover:border-[#D99B21] transition-all active:scale-95 shadow-lg backdrop-blur-xl cursor-pointer"
           title={isMonitorFullscreen ? 'Exit full screen (Esc)' : 'Expand to full screen'}
         >
           {isMonitorFullscreen ? <Minimize2 size={13} className="text-[#D99B21]" /> : <Maximize2 size={13} className="text-[#D99B21]" />}
@@ -1035,10 +1035,10 @@ export function Earth3DGlobe({
       {/* 5. Left Floating HUD: Live Lat/Lon Raycast Info (ONLY inside Indian Ocean) */}
       <div className="absolute left-4 bottom-4 flex flex-col gap-2 max-w-[280px]">
         {hoverCoord && (
-          <div className="border border-[#ffd700]/40 bg-[#0a1d33]/95 p-2 text-xs text-[#FAF7BB] backdrop-blur rounded-sm shadow-xl pointer-events-none animate-in fade-in duration-100">
+          <div className="border border-[#ffd700]/40 bg-[#0a1d33]/80 p-3 text-xs text-[#FAF7BB] backdrop-blur-xl rounded-xl shadow-2xl pointer-events-none animate-in fade-in duration-100">
             <div className="flex items-center gap-1.5 font-data text-[10px] text-[#ffd700]">
               <Crosshair size={11} className="animate-spin" style={{ animationDuration: '4s' }} />
-              <span className="font-bold">INDIAN OCEAN TARGET</span>
+              <span className="font-bold tracking-wider">INDIAN OCEAN TARGET</span>
             </div>
             <div className="mt-1 font-bold text-sm font-data text-[#FAF7BB]">
               {hoverCoord.lat > 0 ? `${hoverCoord.lat}°N` : `${Math.abs(hoverCoord.lat)}°S`},{' '}
@@ -1047,7 +1047,7 @@ export function Earth3DGlobe({
             <div className="mt-0.5 text-[11px] text-[#ffd700] font-medium truncate">
               {hoverCoord.region}
             </div>
-            <div className="mt-1 flex items-center justify-between text-[10px] font-data text-[#FAF7BB]/60 border-t border-[#FAF7BB]/10 pt-1">
+            <div className="mt-1 flex items-center justify-between text-[10px] font-data text-[#FAF7BB]/70 border-t border-[#FAF7BB]/10 pt-1">
               <span>EST. SST: <strong className="text-[#ff9900]">{hoverCoord.sst}°C</strong></span>
               <span className="text-[#ffd700]">Click to pin</span>
             </div>
@@ -1056,10 +1056,10 @@ export function Earth3DGlobe({
 
         {/* Yellow-to-Red Indian Ocean Heat Legend */}
         {showSst && (
-          <div className="border border-[#FAF7BB]/15 bg-[#0a1d33]/90 p-2 rounded-sm backdrop-blur text-[10px] text-[#FAF7BB]/80 shadow-md">
-            <div className="flex items-center justify-between font-data font-semibold text-[9px] mb-1">
+          <div className="border border-[#FAF7BB]/15 bg-[#0a1d33]/80 p-2.5 rounded-xl backdrop-blur-xl text-[10px] text-[#FAF7BB]/85 shadow-xl">
+            <div className="flex items-center justify-between font-data font-semibold text-[9px] mb-1.5">
               <span className="text-[#ffd700]">24°C (Yellow)</span>
-              <span className="text-[#FAF7BB]/60">Indian Ocean Thermal</span>
+              <span className="text-[#FAF7BB]/70">Indian Ocean Thermal</span>
               <span className="text-[#ff2200]">31°C (Red)</span>
             </div>
             <div
@@ -1075,7 +1075,7 @@ export function Earth3DGlobe({
 
       {/* 6. Out-of-Domain Warning Toast */}
       {outOfDomainWarning && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 border border-[#D99B21] bg-[#133458]/95 px-3 py-2 text-xs font-semibold text-[#FAF7BB] backdrop-blur rounded shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 border border-[#D99B21] bg-[#133458]/90 px-3.5 py-2 text-xs font-semibold text-[#FAF7BB] backdrop-blur-xl rounded-lg shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150">
           <AlertCircle size={15} className="text-[#D99B21] shrink-0" />
           <span>Coordinates restricted to Indian Ocean domain (5°–30°N, 45°–105°E)</span>
         </div>
@@ -1083,17 +1083,17 @@ export function Earth3DGlobe({
 
       {/* 7. Right Floating Panel: Pinned Coordinates Card */}
       {pinnedPoint && (
-        <div className="absolute right-4 bottom-4 w-72 sm:w-80 border border-[#D99B21] bg-[#0a1d33]/95 p-3.5 text-xs text-[#FAF7BB] backdrop-blur rounded-sm shadow-2xl animate-in slide-in-from-bottom-2 duration-200">
-          <div className="flex items-center justify-between border-b border-[#FAF7BB]/15 pb-2">
+        <div className="absolute right-4 bottom-4 w-72 sm:w-80 border border-[#D99B21]/60 bg-[#0a1d33]/85 p-4 text-xs text-[#FAF7BB] backdrop-blur-2xl rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.18)] animate-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-center justify-between border-b border-[#FAF7BB]/15 pb-2.5">
             <div className="flex items-center gap-1.5 font-bold text-[#ffd700]">
               <MapPin size={14} />
-              <span className="text-xs uppercase tracking-wide">Target Pin Selected</span>
+              <span className="text-xs uppercase tracking-wider">Target Pin Selected</span>
             </div>
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={copyCoords}
-                className="p-1 rounded hover:bg-[#FAF7BB]/10 text-[#FAF7BB]/70 hover:text-[#FAF7BB]"
+                className="p-1.5 rounded-md hover:bg-[#FAF7BB]/10 text-[#FAF7BB]/70 hover:text-[#FAF7BB] transition-colors"
                 title="Copy coordinates"
               >
                 {copied ? <Check size={13} className="text-[#20a39e]" /> : <Copy size={13} />}
@@ -1101,7 +1101,7 @@ export function Earth3DGlobe({
               <button
                 type="button"
                 onClick={() => setPinnedPoint(null)}
-                className="p-1 rounded hover:bg-[#FAF7BB]/10 text-[#FAF7BB]/70 hover:text-[#FAF7BB]"
+                className="p-1.5 rounded-md hover:bg-[#FAF7BB]/10 text-[#FAF7BB]/70 hover:text-[#FAF7BB] transition-colors"
                 title="Close"
               >
                 <X size={13} />
@@ -1117,25 +1117,25 @@ export function Earth3DGlobe({
             <p className="mt-0.5 text-xs text-[#ffd700] font-medium">{pinnedPoint.region}</p>
           </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-2 border-y border-[#FAF7BB]/10 py-2 font-data text-[11px]">
+          <div className="mt-3 grid grid-cols-2 gap-2 border-y border-[#FAF7BB]/10 py-2.5 font-data text-[11px]">
             <div>
-              <span className="text-[#FAF7BB]/60 block text-[9px] uppercase">Sea Surface Temp</span>
+              <span className="text-[#FAF7BB]/60 block text-[9px] uppercase tracking-wider">Sea Surface Temp</span>
               <strong className="text-sm font-bold text-[#ff9900]">{pinnedPoint.sst}°C</strong>
             </div>
             <div>
-              <span className="text-[#FAF7BB]/60 block text-[9px] uppercase">Domain Coverage</span>
-              <strong className="text-sm font-bold text-[#ffd700]">Indian Ocean In-Domain</strong>
+              <span className="text-[#FAF7BB]/60 block text-[9px] uppercase tracking-wider">Domain Coverage</span>
+              <strong className="text-sm font-bold text-[#ffd700]">In-Domain</strong>
             </div>
           </div>
 
           {/* Depth Levels */}
           <div className="mt-2.5">
-            <div className="text-[10px] text-[#FAF7BB]/60 uppercase font-data mb-1">
+            <div className="text-[10px] text-[#FAF7BB]/60 uppercase font-data mb-1.5 tracking-wider">
               Reconstruction Depths (8 levels to 1000m)
             </div>
             <div className="flex flex-wrap gap-1 font-data text-[9px]">
               {pinnedPoint.depths?.map((d) => (
-                <span key={d} className="bg-[#FAF7BB]/10 px-1.5 py-0.5 rounded text-[#FAF7BB]/90">
+                <span key={d} className="bg-[#FAF7BB]/12 px-2 py-0.5 rounded text-[#FAF7BB]/90 border border-[#FAF7BB]/10">
                   {d}m
                 </span>
               ))}
@@ -1146,7 +1146,7 @@ export function Earth3DGlobe({
           <button
             type="button"
             onClick={() => onLaunchReconstruction?.(pinnedPoint.lat, pinnedPoint.lon, pinnedPoint.sst)}
-            className="mt-3.5 w-full flex items-center justify-center gap-2 rounded-sm bg-[#D99B21] py-2 px-3 text-xs font-bold text-[#133458] hover:bg-[#e8aa2a] transition-all shadow-md active:scale-[0.98]"
+            className="mt-3.5 w-full flex items-center justify-center gap-2 rounded-lg bg-[#D99B21] py-2.5 px-3 text-xs font-bold text-[#133458] hover:bg-[#e8aa2a] transition-all shadow-[0_4px_14px_rgba(217,155,33,0.35)] active:scale-[0.98]"
           >
             <Sparkles size={14} /> Reconstruct Here
           </button>
@@ -1162,7 +1162,7 @@ export function Earth3DGlobe({
             scaleRef.current = next;
             return next;
           })}
-          className="flex h-7 w-7 items-center justify-center rounded-sm border border-[#FAF7BB]/20 bg-[#0a1d33]/90 text-[#FAF7BB] hover:bg-[#0a1d33] transition-colors shadow-md"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB] hover:bg-[#0a1d33] backdrop-blur-xl transition-all active:scale-95 shadow-lg"
           title="Zoom In"
         >
           <ZoomIn size={14} />
@@ -1174,7 +1174,7 @@ export function Earth3DGlobe({
             scaleRef.current = next;
             return next;
           })}
-          className="flex h-7 w-7 items-center justify-center rounded-sm border border-[#FAF7BB]/20 bg-[#0a1d33]/90 text-[#FAF7BB] hover:bg-[#0a1d33] transition-colors shadow-md"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB] hover:bg-[#0a1d33] backdrop-blur-xl transition-all active:scale-95 shadow-lg"
           title="Zoom Out"
         >
           <ZoomOut size={14} />
@@ -1182,7 +1182,7 @@ export function Earth3DGlobe({
         <button
           type="button"
           onClick={resetToNorthIndianOcean}
-          className="flex h-7 w-7 items-center justify-center rounded-sm border border-[#FAF7BB]/20 bg-[#0a1d33]/90 text-[#FAF7BB] hover:bg-[#0a1d33] transition-colors shadow-md"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB] hover:bg-[#0a1d33] backdrop-blur-xl transition-all active:scale-95 shadow-lg"
           title="Center on Indian Ocean"
         >
           <Compass size={14} />
@@ -1194,10 +1194,10 @@ export function Earth3DGlobe({
             autoRotateRef.current = next;
             return next;
           })}
-          className={`flex h-7 w-7 items-center justify-center rounded-sm border transition-colors shadow-md ${
+          className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-all active:scale-95 shadow-lg backdrop-blur-xl ${
             autoRotate
               ? 'border-[#D99B21] bg-[#D99B21]/30 text-[#FAF7BB]'
-              : 'border-[#FAF7BB]/20 bg-[#0a1d33]/90 text-[#FAF7BB]/70 hover:text-[#FAF7BB]'
+              : 'border-[#FAF7BB]/20 bg-[#0a1d33]/80 text-[#FAF7BB]/70 hover:text-[#FAF7BB]'
           }`}
           title={autoRotate ? 'Pause Earth Revolution' : 'Start Earth Revolution'}
         >

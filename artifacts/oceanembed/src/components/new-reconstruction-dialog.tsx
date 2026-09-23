@@ -266,7 +266,7 @@ export function NewReconstructionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl border-[#D8D0B3] bg-[#FAF7BB] p-0 text-[#133458] shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+      <DialogContent className="max-w-3xl border border-[#133458]/15 bg-[#FAF7BB]/95 backdrop-blur-2xl p-0 text-[#133458] rounded-2xl shadow-[0_25px_60px_-15px_rgba(19,52,88,0.3),inset_0_1px_1px_rgba(255,255,255,0.7)] max-h-[92vh] flex flex-col overflow-hidden">
         {/* Header */}
         <DialogHeader className="border-b border-[#D8D0B3] bg-[#133458] px-6 py-4 text-[#FAF7BB]">
           <div className="flex items-center justify-between">
