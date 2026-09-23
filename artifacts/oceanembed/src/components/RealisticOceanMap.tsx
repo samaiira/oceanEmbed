@@ -583,34 +583,6 @@ export function RealisticOceanMap({
     dragStartRef.current = null;
   };
 
-  // Wheel Zoom Handler
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const container = containerRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    // Image coordinates before zoom
-    const before = screenToImage(mouseX, mouseY, rect.width, rect.height);
-
-    const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-    const nextZoom = Math.max(0.65, Math.min(5.0, viewState.zoom * zoomFactor));
-
-    setViewState((prev) => {
-      const nextScale = (rect.width / 880) * nextZoom;
-      const nextViewX = before.imgX - (mouseX - rect.width / 2) / nextScale;
-      const nextViewY = before.imgY - (mouseY - rect.height / 2) / nextScale;
-
-      return {
-        zoom: nextZoom,
-        viewImgX: Math.max(50, Math.min(974, nextViewX)),
-        viewImgY: Math.max(50, Math.min(685, nextViewY)),
-      };
-    });
-  };
-
   // Click Handler (Drop Target Pin or Select Float)
   const handleClick = () => {
     if (activeFloatHover) {
@@ -658,7 +630,6 @@ export function RealisticOceanMap({
         handleMouseUp();
         setHoverInfo(null);
       }}
-      onWheel={handleWheel}
       onClick={handleClick}
       className={`relative w-full overflow-hidden rounded-2xl border border-white/80 bg-[#06172e] shadow-2xl select-none transition-all duration-300 ${
         isFullscreen
@@ -707,7 +678,7 @@ export function RealisticOceanMap({
           type="button"
           onClick={handleZoomIn}
           className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/70 bg-white/75 backdrop-blur-xl text-[#133458] shadow-md hover:bg-white hover:scale-105 active:scale-95 transition-all"
-          title="Zoom In (or scroll up)"
+          title="Zoom In"
         >
           <ZoomIn size={16} />
         </button>
@@ -715,7 +686,7 @@ export function RealisticOceanMap({
           type="button"
           onClick={handleZoomOut}
           className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/70 bg-white/75 backdrop-blur-xl text-[#133458] shadow-md hover:bg-white hover:scale-105 active:scale-95 transition-all"
-          title="Zoom Out (or scroll down)"
+          title="Zoom Out"
         >
           <ZoomOut size={16} />
         </button>
