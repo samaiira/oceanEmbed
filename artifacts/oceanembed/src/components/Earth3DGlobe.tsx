@@ -424,7 +424,7 @@ export function Earth3DGlobe({
   // Orientation State: centered on North Indian Ocean (15°N, 68°E)
   const [lambda0, setLambda0] = useState<number>((68 * Math.PI) / 180);
   const [phi0, setPhi0] = useState<number>((15 * Math.PI) / 180);
-  const [scale, setScale] = useState<number>(1.30);
+  const [scale, setScale] = useState<number>(1.02);
   const [isMonitorFullscreen, setIsMonitorFullscreen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -840,7 +840,7 @@ export function Earth3DGlobe({
   const resetToNorthIndianOcean = () => {
     const l0 = (68 * Math.PI) / 180;
     const p0 = (15 * Math.PI) / 180;
-    const sc = compact && !expanded ? 1.05 : 1.35;
+    const sc = compact && !expanded ? 0.90 : 1.02;
     lambda0Ref.current = l0;
     phi0Ref.current = p0;
     scaleRef.current = sc;
