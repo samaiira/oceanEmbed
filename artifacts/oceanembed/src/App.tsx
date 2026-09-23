@@ -65,7 +65,6 @@ type NavItem = { label: string; href: string; icon: Icon };
 
 const navItems: NavItem[] = [
   { label: 'Overview', href: '/dashboard', icon: Gauge },
-  { label: 'Ocean map', href: '/map', icon: Globe2 },
   { label: 'Reconstructions', href: '/reconstructions', icon: Layers3 },
   { label: 'Temperature', href: '/temperature', icon: Thermometer },
   { label: 'Performance', href: '/performance', icon: TrendingUp },
@@ -960,10 +959,6 @@ function Dashboard() {
                   <Map size={13} /> 2D Map
                 </button>
               </div>
-
-              <Link href="/map" className="flex items-center gap-1 text-xs font-semibold text-[#838921] hover:text-[#133458]" data-testid="link-open-full-map">
-                Open full map <ArrowRight size={14} />
-              </Link>
             </div>
           </div>
 
@@ -2338,7 +2333,7 @@ function LandingNio() {
             <p className="mt-7 max-w-md text-sm leading-7 text-[#FAF7BB]/60">
               The Arabian Sea and Bay of Bengal are the two subregions in the January 2023 study field. OceanEmbed keeps their subsurface temperature structure in view.
             </p>
-            <Link href="/map" className="mt-8 inline-flex items-center gap-2 text-xs font-semibold text-[#D99B21]" data-testid="link-landing-map">
+            <Link href="/dashboard" className="mt-8 inline-flex items-center gap-2 text-xs font-semibold text-[#D99B21]" data-testid="link-landing-map">
               Open the study field <ArrowRight size={14} />
             </Link>
           </div>
@@ -2371,7 +2366,7 @@ function Router() {
         <Route path="/sign-up" component={SignUpPage} />
         <Route path="/sign-up/*?" component={SignUpPage} />
         <Route path="/dashboard"><ProtectedPage><Dashboard /></ProtectedPage></Route>
-        <Route path="/map"><ProtectedPage><MapNio /></ProtectedPage></Route>
+        <Route path="/map"><Redirect to="/dashboard" /></Route>
         <Route path="/reconstructions"><ProtectedPage><ReconstructionsScientific /></ProtectedPage></Route>
         <Route path="/temperature"><ProtectedPage><Temperature /></ProtectedPage></Route>
         <Route path="/performance/architecture"><ProtectedPage><Architecture /></ProtectedPage></Route>
