@@ -4,7 +4,7 @@ import { Link, Redirect, Route, Switch, useLocation, Router as WouterRouter } fr
 import {
   Activity, ArrowDownRight, ArrowRight, Bell, Check, ChevronDown,
   CircleHelp, Cloud, Database, Download, FileText,
-  Gauge, Globe2, Layers3, Menu, MoreHorizontal, Mountain,
+  Gauge, Globe, Globe2, Layers3, Map, Menu, MoreHorizontal, Mountain,
   Network, Play, Plus, RotateCcw, Search, Settings2, SlidersHorizontal,
   Sparkles, Thermometer, TrendingUp, Waves, X
 } from 'lucide-react';
@@ -15,6 +15,7 @@ import NotFound from '@/pages/not-found';
 import { SupabaseAuthProvider, useSupabaseAuth } from '@/lib/supabase-auth-context';
 import { AuthCard } from '@/components/auth-card';
 import { NewReconstructionDialog, type ReconstructionResult } from '@/components/new-reconstruction-dialog';
+import { Earth3DGlobe, type PinnedPoint } from '@/components/Earth3DGlobe';
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -128,6 +129,8 @@ interface ReconstructionsContextType {
   setDialogOpen: (open: boolean) => void;
   addRun: (newRun: ReconstructionResult) => void;
   updateRun: (updatedRun: ReconstructionResult) => void;
+  targetCoords: { lat: number; lon: number; sst?: number } | null;
+  openWithCoordinates: (lat: number, lon: number, sst?: number) => void;
 }
 
 const ReconstructionsContext = createContext<ReconstructionsContextType | null>(null);
@@ -144,6 +147,7 @@ function ReconstructionsProvider({ children }: { children: React.ReactNode }) {
   const [runs, setRuns] = useState<ReconstructionResult[]>(defaultReconstructions);
   const [activeRun, setActiveRun] = useState<ReconstructionResult>(defaultReconstructions[0]);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const [targetCoords, setTargetCoords] = useState<{ lat: number; lon: number; sst?: number } | null>(null);
 
   const addRun = (newRun: ReconstructionResult) => {
     setRuns((prev) => [newRun, ...prev]);
@@ -153,6 +157,11 @@ function ReconstructionsProvider({ children }: { children: React.ReactNode }) {
   const updateRun = (updatedRun: ReconstructionResult) => {
     setRuns((prev) => prev.map((r) => (r.id === updatedRun.id ? updatedRun : r)));
     setActiveRun(updatedRun);
+  };
+
+  const openWithCoordinates = (lat: number, lon: number, sst?: number) => {
+    setTargetCoords({ lat, lon, sst });
+    setDialogOpen(true);
   };
 
   return (
@@ -165,12 +174,20 @@ function ReconstructionsProvider({ children }: { children: React.ReactNode }) {
         setDialogOpen,
         addRun,
         updateRun,
+        targetCoords,
+        openWithCoordinates,
       }}
     >
       {children}
       <NewReconstructionDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={(isOpen) => {
+          setDialogOpen(isOpen);
+          if (!isOpen) setTargetCoords(null);
+        }}
+        initialLat={targetCoords?.lat}
+        initialLon={targetCoords?.lon}
+        initialSst={targetCoords?.sst}
         onRunComplete={(newRun) => {
           addRun(newRun);
         }}
@@ -557,8 +574,10 @@ function PerformanceGraphs() {
 }
 
 function Dashboard() {
-  const { runs, activeRun, setActiveRun, setDialogOpen } = useReconstructions();
+  const { runs, activeRun, setActiveRun, setDialogOpen, openWithCoordinates } = useReconstructions();
   const [selected, setSelected] = useState(activeRun?.name || 'Arabian Sea');
+  const [mapMode, setMapMode] = useState<'3d' | '2d'>('3d');
+  const [pickedPoint, setPickedPoint] = useState<PinnedPoint | null>(null);
   const { user, profile, userId } = useSupabaseAuth();
   const [copied, setCopied] = useState(false);
 
@@ -635,18 +654,85 @@ function Dashboard() {
         </div>
         <div className="mt-5 grid gap-5 xl:grid-cols-[1.55fr_1fr]">
           <section className="oe-card p-4 sm:p-5">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="oe-kicker mb-1">Surface field</div>
                 <h2 className="font-display text-2xl text-[#133458]">Where the model is looking</h2>
               </div>
-              <Link href="/map" className="flex items-center gap-1 text-xs font-semibold text-[#838921] hover:text-[#133458]" data-testid="link-open-full-map">
-                Open full map <ArrowRight size={14} />
-              </Link>
+              <div className="flex items-center gap-3">
+                {/* 3D Earth vs 2D Map Toggle */}
+                <div className="flex rounded-sm border border-[#D8D0B3] bg-[#FAF7BB] p-0.5 text-xs font-semibold text-[#133458]">
+                  <button
+                    type="button"
+                    onClick={() => setMapMode('3d')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-sm transition-all ${
+                      mapMode === '3d'
+                        ? 'bg-[#133458] text-[#FAF7BB] shadow-sm'
+                        : 'text-[#536675] hover:text-[#133458]'
+                    }`}
+                  >
+                    <Globe size={13} /> 3D Earth
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMapMode('2d')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-sm transition-all ${
+                      mapMode === '2d'
+                        ? 'bg-[#133458] text-[#FAF7BB] shadow-sm'
+                        : 'text-[#536675] hover:text-[#133458]'
+                    }`}
+                  >
+                    <Map size={13} /> 2D Map
+                  </button>
+                </div>
+                <Link href="/map" className="flex items-center gap-1 text-xs font-semibold text-[#838921] hover:text-[#133458]" data-testid="link-open-full-map">
+                  Open full map <ArrowRight size={14} />
+                </Link>
+              </div>
             </div>
-            <OceanMap compact onSelect={setSelected} />
-            <div className="mt-3 flex items-center justify-between text-xs text-[#536675]">
-              <span>Active cast: <strong className="text-[#133458]">{activeRun.name}</strong> ({activeRun.latitude}°N, {activeRun.longitude}°E)</span>
+
+            {mapMode === '3d' ? (
+              <Earth3DGlobe
+                compact
+                activeCasts={runs.map((r) => ({
+                  id: r.id,
+                  name: r.name,
+                  lat: r.latitude,
+                  lon: r.longitude,
+                  sst: r.sst,
+                  rmse: r.rmse,
+                  isActive: r.id === activeRun?.id,
+                }))}
+                onSelectCast={(name) => {
+                  const found = runs.find((r) => r.name === name);
+                  if (found) {
+                    setActiveRun(found);
+                    setSelected(found.name);
+                  }
+                }}
+                onDropPin={(point) => {
+                  setPickedPoint(point);
+                }}
+                onLaunchReconstruction={(lat, lon, sst) => {
+                  openWithCoordinates(lat, lon, sst);
+                }}
+              />
+            ) : (
+              <OceanMap compact onSelect={setSelected} />
+            )}
+
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#536675]">
+              <span>
+                {pickedPoint ? (
+                  <>
+                    Point selected: <strong className="text-[#133458] font-data font-bold">{pickedPoint.lat}°N, {pickedPoint.lon}°E</strong> ({pickedPoint.region} · Est. SST {pickedPoint.sst}°C)
+                  </>
+                ) : (
+                  <>
+                    Active cast: <strong className="text-[#133458]">{activeRun.name}</strong> ({activeRun.latitude}°N, {activeRun.longitude}°E)
+                  </>
+                )}
+              </span>
               <span className="font-data text-[10px]">{studyBounds}</span>
             </div>
           </section>
@@ -721,9 +807,11 @@ function Dashboard() {
 }
 
 function MapNio() {
-  const { runs, activeRun, setActiveRun, setDialogOpen } = useReconstructions();
+  const { runs, activeRun, setActiveRun, setDialogOpen, openWithCoordinates } = useReconstructions();
   const [layer, setLayer] = useState('Sea surface temperature');
   const [selected, setSelected] = useState(activeRun?.name || 'Arabian Sea');
+  const [mapMode, setMapMode] = useState<'3d' | '2d'>('3d');
+  const [pickedPoint, setPickedPoint] = useState<PinnedPoint | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const layers = ['Sea surface temperature', 'Subsurface reconstruction', 'Model confidence'];
 
@@ -822,9 +910,35 @@ function MapNio() {
         <SectionHeading
           eyebrow="Spatial explorer · North Indian Ocean"
           title="Ocean map"
-          description={`North Indian Ocean study field, bounded by ${studyBounds}. Click any active cast or preset on the map to inspect its subsurface profile.`}
+          description={`North Indian Ocean study field, bounded by ${studyBounds}. Explore the 3D Earth, or click any location to read Latitude & Longitude.`}
           action={
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* 3D Earth vs 2D Map Toggle */}
+              <div className="flex rounded-sm border border-[#D8D0B3] bg-[#FAF7BB] p-0.5 text-xs font-semibold text-[#133458]">
+                <button
+                  type="button"
+                  onClick={() => setMapMode('3d')}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-sm transition-all ${
+                    mapMode === '3d'
+                      ? 'bg-[#133458] text-[#FAF7BB] shadow-sm'
+                      : 'text-[#536675] hover:text-[#133458]'
+                  }`}
+                >
+                  <Globe size={13} /> 3D Earth
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMapMode('2d')}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-sm transition-all ${
+                    mapMode === '2d'
+                      ? 'bg-[#133458] text-[#FAF7BB] shadow-sm'
+                      : 'text-[#536675] hover:text-[#133458]'
+                  }`}
+                >
+                  <Map size={13} /> 2D Map
+                </button>
+              </div>
+
               <button
                 onClick={() => setDialogOpen(true)}
                 className="oe-control oe-primary flex items-center gap-2"
@@ -856,11 +970,44 @@ function MapNio() {
         />
         <div className="grid gap-5 xl:grid-cols-[1fr_310px]">
           <section>
-            <OceanMap selectedLayer={layer} onSelect={setSelected} />
+            {mapMode === '3d' ? (
+              <Earth3DGlobe
+                activeCasts={runs.map((r) => ({
+                  id: r.id,
+                  name: r.name,
+                  lat: r.latitude,
+                  lon: r.longitude,
+                  sst: r.sst,
+                  rmse: r.rmse,
+                  isActive: r.id === activeRun?.id,
+                }))}
+                onSelectCast={(name) => {
+                  const found = runs.find((r) => r.name === name);
+                  if (found) {
+                    setActiveRun(found);
+                    setSelected(found.name);
+                  }
+                }}
+                onDropPin={(point) => {
+                  setPickedPoint(point);
+                }}
+                onLaunchReconstruction={(lat, lon, sst) => {
+                  openWithCoordinates(lat, lon, sst);
+                }}
+              />
+            ) : (
+              <OceanMap selectedLayer={layer} onSelect={setSelected} />
+            )}
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-[#24384d] font-semibold">
-              <span className="font-data text-[10px] text-[#133458] font-bold">{studyRegion} · {studyBounds} · {runs.length} Active Casts</span>
+              <span className="font-data text-[10px] text-[#133458] font-bold">
+                {pickedPoint ? (
+                  <>Selected Point: {pickedPoint.lat}°N, {pickedPoint.lon}°E ({pickedPoint.region} · Est. SST {pickedPoint.sst}°C)</>
+                ) : (
+                  <>{studyRegion} · {studyBounds} · {runs.length} Active Casts</>
+                )}
+              </span>
               <span className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-[#D99B21]" /> Click any marker on the map to inspect
+                <span className="h-2 w-2 rounded-full bg-[#D99B21]" /> Click anywhere on the 3D globe to inspect Latitude & Longitude
               </span>
             </div>
           </section>

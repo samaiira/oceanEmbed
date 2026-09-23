@@ -47,6 +47,9 @@ interface NewReconstructionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onRunComplete?: (result: ReconstructionResult) => void;
+  initialLat?: number;
+  initialLon?: number;
+  initialSst?: number;
 }
 
 const ALL_DEPTHS = [0, 10, 20, 30, 50, 75, 100, 125, 150, 200, 250, 300, 400, 500, 600, 700, 800, 1000, 1200, 1500, 1750, 2000];
@@ -63,16 +66,29 @@ export function NewReconstructionDialog({
   open,
   onOpenChange,
   onRunComplete,
+  initialLat,
+  initialLon,
+  initialSst,
 }: NewReconstructionDialogProps) {
   // Form State
-  const [lat, setLat] = useState<number>(15.5);
-  const [lon, setLon] = useState<number>(65.0);
+  const [lat, setLat] = useState<number>(initialLat ?? 15.5);
+  const [lon, setLon] = useState<number>(initialLon ?? 65.0);
   const [date, setDate] = useState<string>('2023-01-15');
   const [selectedDepths, setSelectedDepths] = useState<number[]>(STANDARD_DEPTHS);
-  const [sst, setSst] = useState<number>(27.8);
+  const [sst, setSst] = useState<number>(initialSst ?? 27.8);
   const [ssha, setSsha] = useState<number>(0.04);
   const [sss, setSss] = useState<number>(36.2);
   const [customName, setCustomName] = useState<string>('');
+
+  useEffect(() => {
+    if (open && initialLat !== undefined && initialLon !== undefined) {
+      setLat(initialLat);
+      setLon(initialLon);
+      if (initialSst !== undefined) {
+        setSst(initialSst);
+      }
+    }
+  }, [open, initialLat, initialLon, initialSst]);
 
   // Optional Reference Images (Visual only)
   const [images, setImages] = useState<{ id: string; name: string; url: string; size: string }[]>([]);
